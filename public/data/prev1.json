@@ -1,0 +1,96 @@
+{
+  "Code": "UserManager.cpp",
+  "Vulnerabilities": {
+    "Security": [
+      {
+        "Line Number": [15, 26],
+        "Vulnerability Code": "if (user.username == username && user.password == password)",
+        "Correct Code": "Add a password hashing and verification mechanism. Store passwordHash instead of password in User. Implement a verifyPassword() function or equivalent. Example syntax: bool verifyPassword(const string& password, const string& passwordHash); Usage: verifyPassword(password, user.passwordHash).",
+        "Hint": "Passwords should never be stored or compared directly.",
+        "Description": "The application compares plaintext passwords instead of using secure password hashing and verification."
+      },
+      {
+        "Line Number": [26, 39],
+        "Vulnerability Code": "file << user.username << ',' << user.password << ',' << user.age << ',' << user.ethnicity << endl;",
+        "Correct Code": "Replace password storage with passwordHash storage. Add encryption or protected storage for sensitive fields if they must be retained. Example additions: string passwordHash; string encryptData(const string& data); Usage: file << user.username << ',' << user.passwordHash << endl;",
+        "Hint": "Sensitive data should not be stored in plaintext.",
+        "Description": "User credentials and personal information are written directly to disk without encryption or protection."
+      }
+    ],
+
+    "Performance": [
+      {
+        "Line Number": [14, 24],
+        "Vulnerability Code": "for (auto user : users)",
+        "Correct Code": "Use const reference iteration to avoid copying User objects. Example syntax: for (const auto& user : users) or for (const User& user : users).",
+        "Hint": "Avoid unnecessary object copies inside loops.",
+        "Description": "Each iteration copies the entire User object, increasing memory usage and CPU overhead."
+      },
+      {
+        "Line Number": [36, 48],
+        "Vulnerability Code": "for (int i = 0; i < users.size(); i++) { for (int j = 0; j < users.size(); j++) { cout << users[i].username << endl; } }",
+        "Correct Code": "Remove the unnecessary inner loop. Use a single-pass traversal. Example syntax: for (const auto& user : users) { cout << user.username << endl; }.",
+        "Hint": "Look for unnecessary nested loops.",
+        "Description": "The nested iteration performs O(n²) work when only O(n) processing is needed."
+      }
+    ],
+
+    "Scalability": [
+      {
+        "Line Number": [14, 28],
+        "Vulnerability Code": "for (auto user : users) { if (user.username == username && user.password == password) return true; }",
+        "Correct Code": "Replace linear search with an indexed lookup structure. Add unordered_map<string, User> userMap or equivalent. Example syntax: unordered_map<string, User> userMap; userMap[username]; userMap.count(username);.",
+        "Hint": "Search operations should remain efficient as data grows.",
+        "Description": "Linear user lookup becomes increasingly expensive with large user populations."
+      },
+      {
+        "Line Number": [12, 22],
+        "Vulnerability Code": "vector<User> users;",
+        "Correct Code": "Replace in-memory storage with a persistent storage layer. Add a UserRepository abstraction and database integration. Example components: class UserRepository; UserRepository::getUser(); UserRepository::saveUser();.",
+        "Hint": "Consider how the application behaves with millions of records.",
+        "Description": "Keeping all users in memory limits scalability and increases resource consumption."
+      }
+    ],
+
+    "Ethics": [
+      {
+        "Line Number": [44, 56],
+        "Vulnerability Code": "if (user.ethnicity == \"GroupA\") { return \"Approved\"; }",
+        "Correct Code": "Remove ethnicity-based decision logic. Introduce objective eligibility evaluation criteria. Example additions: evaluateLoanRisk(); creditScore; income; repaymentHistory. Example syntax: evaluateLoanRisk(user.creditScore, user.income, user.loanHistory).",
+        "Hint": "Decisions should not depend on protected demographic attributes.",
+        "Description": "The loan approval logic directly discriminates based on ethnicity."
+      },
+      {
+        "Line Number": [26, 39],
+        "Vulnerability Code": "file << user.username << ',' << user.password << ',' << user.age << ',' << user.ethnicity << endl;",
+        "Correct Code": "Implement data minimization, consent handling, and protection of sensitive fields. Example additions: bool userConsent; encryptData(); anonymizeData(); store only required attributes.",
+        "Hint": "Collect and store only what is required.",
+        "Description": "The application unnecessarily stores sensitive personal information, creating privacy concerns."
+      }
+    ],
+
+    "Maintainability": [
+      {
+        "Line Number": [44, 56],
+        "Vulnerability Code": "if (user.ethnicity == \"GroupA\") { return \"Approved\"; }",
+        "Correct Code": "Move business rules into a dedicated policy/service layer. Example additions: class LoanPolicy; class LoanEvaluator;. Example syntax: loanPolicy.evaluate(user);.",
+        "Hint": "Business rules should not be hardcoded throughout the codebase.",
+        "Description": "Hardcoded logic makes future updates difficult and error-prone."
+      },
+      {
+        "Line Number": [12, 22],
+        "Vulnerability Code": "vector<User> users;",
+        "Correct Code": "Encapsulate storage logic within a repository or service class. Example additions: class UserRepository; class UserService;. Example syntax: userRepository.getUser(); userRepository.saveUser();.",
+        "Hint": "Global state often creates tight coupling.",
+        "Description": "The global users container makes testing, debugging, and future modifications harder."
+      },
+      {
+        "Line Number": [24, 34],
+        "Vulnerability Code": "ofstream file(\"users.txt\", ios::app);",
+        "Correct Code": "Add file validation and error handling. Example additions: file.is_open(); runtime_error; try-catch block. Example syntax: if (!file.is_open()) { throw runtime_error(\"Failed to open file\"); }.",
+        "Hint": "External operations can fail.",
+        "Description": "No error handling exists for file access failures."
+      }
+    ]
+  }
+}

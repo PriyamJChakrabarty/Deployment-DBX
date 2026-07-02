@@ -1,0 +1,3304 @@
+{
+  "Problems": [
+    {
+      "Problem Number": 1,
+      "Code": "AccountImporter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "strcpy(buffer, input.c_str()); // SECURITY: fixed-size buffer overflow",
+            "Correct Code": "Use std::string directly or a bounded copy routine that validates input length before writing into a fixed-size buffer.",
+            "Hint": "Never copy untrusted data into a fixed-size buffer without enforcing a size limit.",
+            "Description": "The code copies attacker-controlled input into a 16-byte stack buffer without bounds checking, a classic buffer overflow pattern often discussed in C/C++ Stack Overflow threads."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              18,
+              38
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "if (record.ethnicity == \"GroupA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on ethnicity, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "if (record.ethnicity == \"GroupA\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 2,
+      "Code": "BillingQueryService.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "string sql = \"SELECT * FROM records WHERE ownerName = '\" + ownerName + \"'\"; // SECURITY: SQL injection",
+            "Correct Code": "Replace string concatenation with parameterized queries or prepared statements so user data never becomes part of executable SQL.",
+            "Hint": "Treat query structure and user data as separate things.",
+            "Description": "User-controlled text is concatenated directly into the SQL statement, enabling injection attacks that can change query semantics."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              23,
+              43
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              33,
+              53
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.creditCardNumber << \",\" << record.countryOfOrigin << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing creditCardNumber in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes creditCardNumber together with countryOfOrigin directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "ofstream file(\"billingqueryservice.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 3,
+      "Code": "ShellTaskRunner.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "system(command.c_str()); // SECURITY: command injection",
+            "Correct Code": "Avoid shell composition. Call a fixed executable with validated arguments through a safe process API or a whitelist-based dispatcher.",
+            "Hint": "If untrusted text reaches a shell, the shell can reinterpret it as commands.",
+            "Description": "The program builds a shell command from untrusted input and executes it, allowing attackers to inject arbitrary operating-system commands."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.gender == \"Male\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on gender, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 4,
+      "Code": "SessionTokenService.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "srand(static_cast<unsigned>(time(nullptr))); // SECURITY: predictable random seed",
+            "Correct Code": "Use a cryptographically secure token generator such as OS-backed randomness and avoid reseeding on each call.",
+            "Hint": "Time-based seeding makes tokens guessable.",
+            "Description": "The token generator seeds rand() with the current time, which makes issued tokens predictable enough for attackers to brute-force or replay."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              36,
+              56
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              44,
+              64
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.sessionToken << \",\" << record.ageBucket << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing sessionToken in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes sessionToken together with ageBucket directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              48,
+              68
+            ],
+            "Vulnerability Code": "if (record.ageBucket == \"18-25\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 5,
+      "Code": "FileExportController.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "ifstream file(\"exports/\" + fileName); // SECURITY: path traversal",
+            "Correct Code": "Normalize the path, reject traversal sequences, and resolve the final path against a fixed allowlisted directory before opening files.",
+            "Hint": "User-controlled path fragments should never be joined directly into filesystem paths.",
+            "Description": "The code opens whatever path the caller provides under a string prefix, so values like ../ can escape the intended directory."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.zipCode == \"10001\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on zipCode, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "ofstream file(\"fileexportcontroller.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 6,
+      "Code": "SupportMessageFormatter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "printf(message.c_str()); // SECURITY: format string",
+            "Correct Code": "Use a fixed format string such as printf(\"%s\", message.c_str()) or write the string through iostreams.",
+            "Hint": "Never let user text become the format string itself.",
+            "Description": "Passing untrusted text directly as the format string allows attackers to read or corrupt memory with format specifiers like %x and %n."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.supportMessage << \",\" << record.disabilityStatus << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing supportMessage in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes supportMessage together with disabilityStatus directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 7,
+      "Code": "OrderAllocator.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "int bytes = requestedCount * static_cast<int>(sizeof(Record)); // SECURITY: integer overflow risk",
+            "Correct Code": "Use size_t or checked arithmetic helpers and reject sizes that would overflow before allocating memory.",
+            "Hint": "Integer math on allocation sizes must be validated before the allocation happens.",
+            "Description": "The multiplication can overflow and produce a smaller-than-required allocation, which may later lead to buffer corruption."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "if (record.pregnancyStatus == \"Pregnant\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on pregnancyStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "if (record.pregnancyStatus == \"Pregnant\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 8,
+      "Code": "CustomerPointerCache.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "return &record; // SECURITY: dangling pointer to loop copy",
+            "Correct Code": "Return a pointer or reference to the stored object, or return an optional value instead of the address of a temporary copy.",
+            "Hint": "Addresses of local copies stop being valid after the scope ends.",
+            "Description": "The loop iterates by value, so returning &record hands back a pointer to a temporary object that disappears immediately."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              27,
+              47
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.salary << \",\" << record.university << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing salary in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes salary together with university directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              36,
+              56
+            ],
+            "Vulnerability Code": "ofstream file(\"customerpointercache.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 9,
+      "Code": "TempReportPublisher.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "if (!filesystem::exists(targetPath)) { // SECURITY: TOCTOU check-then-use",
+            "Correct Code": "Create the file atomically with exclusive semantics instead of checking first and opening later.",
+            "Hint": "Another process can change the filesystem between your check and your write.",
+            "Description": "The existence check and the file creation are separated, enabling a race where another actor swaps the target before the write happens."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              44,
+              64
+            ],
+            "Vulnerability Code": "if (record.nativeLanguage == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on nativeLanguage, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 10,
+      "Code": "PluginPathLoader.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "const string adminSecret = \"debugbattle-root-secret\"; // SECURITY: hardcoded secret",
+            "Correct Code": "Move secrets to a secure secret-management system or environment configuration and rotate them regularly.",
+            "Hint": "Secrets embedded in source control are easy to leak and hard to rotate.",
+            "Description": "The privileged secret is hardcoded in the source file, which exposes it to anyone with repository or binary access."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.pluginPath << \",\" << record.religion << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing pluginPath in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes pluginPath together with religion directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              41,
+              61
+            ],
+            "Vulnerability Code": "if (record.religion == \"ReligionA\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 11,
+      "Code": "PasswordVaultSync.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "tmpnam(name); // SECURITY: insecure temporary file",
+            "Correct Code": "Use a secure temporary-file API that creates the file atomically with safe permissions instead of only generating a name.",
+            "Hint": "Predictable temp names invite collisions and hijacking.",
+            "Description": "tmpnam only generates a name and does not reserve it securely, so attackers can pre-create or race the file."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.incomeBracket == \"High\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on incomeBracket, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "ofstream file(\"passwordvaultsync.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 12,
+      "Code": "AuditArchiveWriter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "return records[userIndex]; // SECURITY: unchecked index access",
+            "Correct Code": "Validate the index before use or switch to bounds-checked access with records.at(userIndex).",
+            "Hint": "Untrusted indexes can walk past the end of containers.",
+            "Description": "The code trusts an external index and dereferences it without any bounds validation, which can trigger crashes or memory corruption."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              24,
+              44
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.tempFileName << \",\" << record.medicalCondition << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing tempFileName in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes tempFileName together with medicalCondition directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 13,
+      "Code": "RequestIndexRouter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "cout << leaked->id << endl; // SECURITY: use-after-free",
+            "Correct Code": "Do not access pointers after delete. Prefer RAII types such as unique_ptr or keep the object alive for the required scope.",
+            "Hint": "Freed memory is no longer yours to read.",
+            "Description": "The pointer is dereferenced after delete, which can produce crashes, stale reads, or attacker-controlled behavior."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "if (record.familyStatus == \"Single\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on familyStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "if (record.familyStatus == \"Single\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 14,
+      "Code": "MediaUploadScanner.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "memcpy(raw, payload.data(), payload.size()); // SECURITY: unchecked memcpy",
+            "Correct Code": "Check payload.size() against the destination capacity and copy only the validated number of bytes.",
+            "Hint": "memcpy does exactly what you ask, even if the destination is too small.",
+            "Description": "The copy length is taken from untrusted input without verifying that it fits into the 32-byte destination buffer."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              25,
+              45
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.imageChunk << \",\" << record.citizenship << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing imageChunk in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes imageChunk together with citizenship directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "ofstream file(\"mediauploadscanner.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 15,
+      "Code": "AdminLoginGateway.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "regex rule(userPattern); // SECURITY: user-controlled regex",
+            "Correct Code": "Use a safe allowlist of patterns, reject complex attacker-provided expressions, or switch to a regex engine with ReDoS protections and time limits.",
+            "Hint": "Attacker-controlled regular expressions can turn input matching into a denial-of-service vector.",
+            "Description": "Compiling and executing arbitrary user-supplied regexes can trigger catastrophic backtracking or resource exhaustion."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.neighborhood == \"Zone-17\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on neighborhood, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 16,
+      "Code": "ImageChunkDecoder.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "strcpy(buffer, input.c_str()); // SECURITY: fixed-size buffer overflow",
+            "Correct Code": "Use std::string directly or a bounded copy routine that validates input length before writing into a fixed-size buffer.",
+            "Hint": "Never copy untrusted data into a fixed-size buffer without enforcing a size limit.",
+            "Description": "The code copies attacker-controlled input into a 16-byte stack buffer without bounds checking, a classic buffer overflow pattern often discussed in C/C++ Stack Overflow threads."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              39,
+              59
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.binaryPayload << \",\" << record.schoolType << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing binaryPayload in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes binaryPayload together with schoolType directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              43,
+              63
+            ],
+            "Vulnerability Code": "if (record.schoolType == \"Private\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 17,
+      "Code": "PayrollCsvExporter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "string sql = \"SELECT * FROM records WHERE ownerName = '\" + ownerName + \"'\"; // SECURITY: SQL injection",
+            "Correct Code": "Replace string concatenation with parameterized queries or prepared statements so user data never becomes part of executable SQL.",
+            "Hint": "Treat query structure and user data as separate things.",
+            "Description": "User-controlled text is concatenated directly into the SQL statement, enabling injection attacks that can change query semantics."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              28,
+              48
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              40,
+              60
+            ],
+            "Vulnerability Code": "if (record.veteranStatus == \"Yes\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on veteranStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "ofstream file(\"payrollcsvexporter.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 18,
+      "Code": "InvoiceFileReader.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "system(command.c_str()); // SECURITY: command injection",
+            "Correct Code": "Avoid shell composition. Call a fixed executable with validated arguments through a safe process API or a whitelist-based dispatcher.",
+            "Hint": "If untrusted text reaches a shell, the shell can reinterpret it as commands.",
+            "Description": "The program builds a shell command from untrusted input and executes it, allowing attackers to inject arbitrary operating-system commands."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.invoicePath << \",\" << record.maritalStatus << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing invoicePath in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes invoicePath together with maritalStatus directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 19,
+      "Code": "BackupRestoreTool.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "srand(static_cast<unsigned>(time(nullptr))); // SECURITY: predictable random seed",
+            "Correct Code": "Use a cryptographically secure token generator such as OS-backed randomness and avoid reseeding on each call.",
+            "Hint": "Time-based seeding makes tokens guessable.",
+            "Description": "The token generator seeds rand() with the current time, which makes issued tokens predictable enough for attackers to brute-force or replay."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              23,
+              43
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "if (record.accentGroup == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on accentGroup, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "if (record.accentGroup == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 20,
+      "Code": "CouponRegexEngine.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "ifstream file(\"exports/\" + fileName); // SECURITY: path traversal",
+            "Correct Code": "Normalize the path, reject traversal sequences, and resolve the final path against a fixed allowlisted directory before opening files.",
+            "Hint": "User-controlled path fragments should never be joined directly into filesystem paths.",
+            "Description": "The code opens whatever path the caller provides under a string prefix, so values like ../ can escape the intended directory."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              25,
+              45
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.patternText << \",\" << record.deviceRegion << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing patternText in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes patternText together with deviceRegion directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "ofstream file(\"couponregexengine.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 21,
+      "Code": "FraudRuleEngine.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "printf(message.c_str()); // SECURITY: format string",
+            "Correct Code": "Use a fixed format string such as printf(\"%s\", message.c_str()) or write the string through iostreams.",
+            "Hint": "Never let user text become the format string itself.",
+            "Description": "Passing untrusted text directly as the format string allows attackers to read or corrupt memory with format specifiers like %x and %n."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.ethnicity == \"GroupA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on ethnicity, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 22,
+      "Code": "AccessLogViewer.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "int bytes = requestedCount * static_cast<int>(sizeof(Record)); // SECURITY: integer overflow risk",
+            "Correct Code": "Use size_t or checked arithmetic helpers and reject sizes that would overflow before allocating memory.",
+            "Hint": "Integer math on allocation sizes must be validated before the allocation happens.",
+            "Description": "The multiplication can overflow and produce a smaller-than-required allocation, which may later lead to buffer corruption."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              38,
+              58
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.chatMessage << \",\" << record.countryOfOrigin << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing chatMessage in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes chatMessage together with countryOfOrigin directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.countryOfOrigin == \"CountryA\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 23,
+      "Code": "NotificationTemplateEngine.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "return &record; // SECURITY: dangling pointer to loop copy",
+            "Correct Code": "Return a pointer or reference to the stored object, or return an optional value instead of the address of a temporary copy.",
+            "Hint": "Addresses of local copies stop being valid after the scope ends.",
+            "Description": "The loop iterates by value, so returning &record hands back a pointer to a temporary object that disappears immediately."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              24,
+              44
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              44,
+              64
+            ],
+            "Vulnerability Code": "if (record.gender == \"Male\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on gender, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              39,
+              59
+            ],
+            "Vulnerability Code": "ofstream file(\"notificationtemplateengine.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 24,
+      "Code": "MemoryPoolAnalyzer.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "if (!filesystem::exists(targetPath)) { // SECURITY: TOCTOU check-then-use",
+            "Correct Code": "Create the file atomically with exclusive semantics instead of checking first and opening later.",
+            "Hint": "Another process can change the filesystem between your check and your write.",
+            "Description": "The existence check and the file creation are separated, enabling a race where another actor swaps the target before the write happens."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              28,
+              48
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.heapLabel << \",\" << record.ageBucket << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing heapLabel in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes heapLabel together with ageBucket directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 25,
+      "Code": "XmlConfigLoader.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "const string adminSecret = \"debugbattle-root-secret\"; // SECURITY: hardcoded secret",
+            "Correct Code": "Move secrets to a secure secret-management system or environment configuration and rotate them regularly.",
+            "Hint": "Secrets embedded in source control are easy to leak and hard to rotate.",
+            "Description": "The privileged secret is hardcoded in the source file, which exposes it to anyone with repository or binary access."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              16,
+              36
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "if (record.zipCode == \"10001\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on zipCode, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "if (record.zipCode == \"10001\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 26,
+      "Code": "FirmwareUpdater.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "tmpnam(name); // SECURITY: insecure temporary file",
+            "Correct Code": "Use a secure temporary-file API that creates the file atomically with safe permissions instead of only generating a name.",
+            "Hint": "Predictable temp names invite collisions and hijacking.",
+            "Description": "tmpnam only generates a name and does not reserve it securely, so attackers can pre-create or race the file."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              25,
+              45
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.signature << \",\" << record.disabilityStatus << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing signature in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes signature together with disabilityStatus directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "ofstream file(\"firmwareupdater.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 27,
+      "Code": "PacketDeserializer.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "return records[userIndex]; // SECURITY: unchecked index access",
+            "Correct Code": "Validate the index before use or switch to bounds-checked access with records.at(userIndex).",
+            "Hint": "Untrusted indexes can walk past the end of containers.",
+            "Description": "The code trusts an external index and dereferences it without any bounds validation, which can trigger crashes or memory corruption."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              18,
+              38
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              27,
+              47
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              40,
+              60
+            ],
+            "Vulnerability Code": "if (record.pregnancyStatus == \"Pregnant\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on pregnancyStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 28,
+      "Code": "SeatReservationService.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              18,
+              38
+            ],
+            "Vulnerability Code": "cout << leaked->id << endl; // SECURITY: use-after-free",
+            "Correct Code": "Do not access pointers after delete. Prefer RAII types such as unique_ptr or keep the object alive for the required scope.",
+            "Hint": "Freed memory is no longer yours to read.",
+            "Description": "The pointer is dereferenced after delete, which can produce crashes, stale reads, or attacker-controlled behavior."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              24,
+              44
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.seatCode << \",\" << record.university << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing seatCode in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes seatCode together with university directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              46,
+              66
+            ],
+            "Vulnerability Code": "if (record.university == \"EliteU\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 29,
+      "Code": "CheckoutLimiter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "memcpy(raw, payload.data(), payload.size()); // SECURITY: unchecked memcpy",
+            "Correct Code": "Check payload.size() against the destination capacity and copy only the validated number of bytes.",
+            "Hint": "memcpy does exactly what you ask, even if the destination is too small.",
+            "Description": "The copy length is taken from untrusted input without verifying that it fits into the 32-byte destination buffer."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.nativeLanguage == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on nativeLanguage, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "ofstream file(\"checkoutlimiter.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 30,
+      "Code": "ApiRateLimiter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "regex rule(userPattern); // SECURITY: user-controlled regex",
+            "Correct Code": "Use a safe allowlist of patterns, reject complex attacker-provided expressions, or switch to a regex engine with ReDoS protections and time limits.",
+            "Hint": "Attacker-controlled regular expressions can turn input matching into a denial-of-service vector.",
+            "Description": "Compiling and executing arbitrary user-supplied regexes can trigger catastrophic backtracking or resource exhaustion."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.rateLimitKey << \",\" << record.religion << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing rateLimitKey in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes rateLimitKey together with religion directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 31,
+      "Code": "ResumeRanker.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "strcpy(buffer, input.c_str()); // SECURITY: fixed-size buffer overflow",
+            "Correct Code": "Use std::string directly or a bounded copy routine that validates input length before writing into a fixed-size buffer.",
+            "Hint": "Never copy untrusted data into a fixed-size buffer without enforcing a size limit.",
+            "Description": "The code copies attacker-controlled input into a 16-byte stack buffer without bounds checking, a classic buffer overflow pattern often discussed in C/C++ Stack Overflow threads."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              18,
+              38
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "if (record.incomeBracket == \"High\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on incomeBracket, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "if (record.incomeBracket == \"High\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 32,
+      "Code": "ShiftScheduler.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "string sql = \"SELECT * FROM records WHERE ownerName = '\" + ownerName + \"'\"; // SECURITY: SQL injection",
+            "Correct Code": "Replace string concatenation with parameterized queries or prepared statements so user data never becomes part of executable SQL.",
+            "Hint": "Treat query structure and user data as separate things.",
+            "Description": "User-controlled text is concatenated directly into the SQL statement, enabling injection attacks that can change query semantics."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              23,
+              43
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              33,
+              53
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.pregnancyNote << \",\" << record.medicalCondition << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing pregnancyNote in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes pregnancyNote together with medicalCondition directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "ofstream file(\"shiftscheduler.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 33,
+      "Code": "TriagePrioritizer.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "system(command.c_str()); // SECURITY: command injection",
+            "Correct Code": "Avoid shell composition. Call a fixed executable with validated arguments through a safe process API or a whitelist-based dispatcher.",
+            "Hint": "If untrusted text reaches a shell, the shell can reinterpret it as commands.",
+            "Description": "The program builds a shell command from untrusted input and executes it, allowing attackers to inject arbitrary operating-system commands."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.familyStatus == \"Single\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on familyStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 34,
+      "Code": "InsuranceQuoteEngine.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "srand(static_cast<unsigned>(time(nullptr))); // SECURITY: predictable random seed",
+            "Correct Code": "Use a cryptographically secure token generator such as OS-backed randomness and avoid reseeding on each call.",
+            "Hint": "Time-based seeding makes tokens guessable.",
+            "Description": "The token generator seeds rand() with the current time, which makes issued tokens predictable enough for attackers to brute-force or replay."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              36,
+              56
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              44,
+              64
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.healthRecord << \",\" << record.citizenship << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing healthRecord in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes healthRecord together with citizenship directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              48,
+              68
+            ],
+            "Vulnerability Code": "if (record.citizenship == \"CountryB\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 35,
+      "Code": "StudentProctoringGateway.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "ifstream file(\"exports/\" + fileName); // SECURITY: path traversal",
+            "Correct Code": "Normalize the path, reject traversal sequences, and resolve the final path against a fixed allowlisted directory before opening files.",
+            "Hint": "User-controlled path fragments should never be joined directly into filesystem paths.",
+            "Description": "The code opens whatever path the caller provides under a string prefix, so values like ../ can escape the intended directory."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.neighborhood == \"Zone-17\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on neighborhood, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "ofstream file(\"studentproctoringgateway.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 36,
+      "Code": "WellnessTrackerSync.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "printf(message.c_str()); // SECURITY: format string",
+            "Correct Code": "Use a fixed format string such as printf(\"%s\", message.c_str()) or write the string through iostreams.",
+            "Hint": "Never let user text become the format string itself.",
+            "Description": "Passing untrusted text directly as the format string allows attackers to read or corrupt memory with format specifiers like %x and %n."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.gpsLocation << \",\" << record.schoolType << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing gpsLocation in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes gpsLocation together with schoolType directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 37,
+      "Code": "AdProfileBuilder.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "int bytes = requestedCount * static_cast<int>(sizeof(Record)); // SECURITY: integer overflow risk",
+            "Correct Code": "Use size_t or checked arithmetic helpers and reject sizes that would overflow before allocating memory.",
+            "Hint": "Integer math on allocation sizes must be validated before the allocation happens.",
+            "Description": "The multiplication can overflow and produce a smaller-than-required allocation, which may later lead to buffer corruption."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "if (record.veteranStatus == \"Yes\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on veteranStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "if (record.veteranStatus == \"Yes\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 38,
+      "Code": "FaceRecognitionDoor.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "return &record; // SECURITY: dangling pointer to loop copy",
+            "Correct Code": "Return a pointer or reference to the stored object, or return an optional value instead of the address of a temporary copy.",
+            "Hint": "Addresses of local copies stop being valid after the scope ends.",
+            "Description": "The loop iterates by value, so returning &record hands back a pointer to a temporary object that disappears immediately."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              27,
+              47
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.biometricTemplate << \",\" << record.maritalStatus << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing biometricTemplate in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes biometricTemplate together with maritalStatus directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              36,
+              56
+            ],
+            "Vulnerability Code": "ofstream file(\"facerecognitiondoor.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 39,
+      "Code": "LoanApprovalDesk.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "if (!filesystem::exists(targetPath)) { // SECURITY: TOCTOU check-then-use",
+            "Correct Code": "Create the file atomically with exclusive semantics instead of checking first and opening later.",
+            "Hint": "Another process can change the filesystem between your check and your write.",
+            "Description": "The existence check and the file creation are separated, enabling a race where another actor swaps the target before the write happens."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              44,
+              64
+            ],
+            "Vulnerability Code": "if (record.accentGroup == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on accentGroup, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 40,
+      "Code": "HiringPortalExporter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "const string adminSecret = \"debugbattle-root-secret\"; // SECURITY: hardcoded secret",
+            "Correct Code": "Move secrets to a secure secret-management system or environment configuration and rotate them regularly.",
+            "Hint": "Secrets embedded in source control are easy to leak and hard to rotate.",
+            "Description": "The privileged secret is hardcoded in the source file, which exposes it to anyone with repository or binary access."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.ssn << \",\" << record.deviceRegion << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing ssn in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes ssn together with deviceRegion directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              41,
+              61
+            ],
+            "Vulnerability Code": "if (record.deviceRegion == \"Region-1\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 41,
+      "Code": "AnalyticsBatchRunner.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "tmpnam(name); // SECURITY: insecure temporary file",
+            "Correct Code": "Use a secure temporary-file API that creates the file atomically with safe permissions instead of only generating a name.",
+            "Hint": "Predictable temp names invite collisions and hijacking.",
+            "Description": "tmpnam only generates a name and does not reserve it securely, so attackers can pre-create or race the file."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              22,
+              42
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.ethnicity == \"GroupA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on ethnicity, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "ofstream file(\"analyticsbatchrunner.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 42,
+      "Code": "LeaderboardAggregator.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "return records[userIndex]; // SECURITY: unchecked index access",
+            "Correct Code": "Validate the index before use or switch to bounds-checked access with records.at(userIndex).",
+            "Hint": "Untrusted indexes can walk past the end of containers.",
+            "Description": "The code trusts an external index and dereferences it without any bounds validation, which can trigger crashes or memory corruption."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              24,
+              44
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              30,
+              50
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.leaderboardNote << \",\" << record.countryOfOrigin << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing leaderboardNote in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes leaderboardNote together with countryOfOrigin directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 43,
+      "Code": "ThreadPerClientServer.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              17,
+              37
+            ],
+            "Vulnerability Code": "cout << leaked->id << endl; // SECURITY: use-after-free",
+            "Correct Code": "Do not access pointers after delete. Prefer RAII types such as unique_ptr or keep the object alive for the required scope.",
+            "Hint": "Freed memory is no longer yours to read.",
+            "Description": "The pointer is dereferenced after delete, which can produce crashes, stale reads, or attacker-controlled behavior."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              9,
+              29
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "if (record.gender == \"Male\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on gender, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "if (record.gender == \"Male\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 44,
+      "Code": "SearchReindexJob.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "memcpy(raw, payload.data(), payload.size()); // SECURITY: unchecked memcpy",
+            "Correct Code": "Check payload.size() against the destination capacity and copy only the validated number of bytes.",
+            "Hint": "memcpy does exactly what you ask, even if the destination is too small.",
+            "Description": "The copy length is taken from untrusted input without verifying that it fits into the 32-byte destination buffer."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              25,
+              45
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.indexPath << \",\" << record.ageBucket << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing indexPath in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes indexPath together with ageBucket directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "ofstream file(\"searchreindexjob.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 45,
+      "Code": "GlobalCacheService.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "regex rule(userPattern); // SECURITY: user-controlled regex",
+            "Correct Code": "Use a safe allowlist of patterns, reject complex attacker-provided expressions, or switch to a regex engine with ReDoS protections and time limits.",
+            "Hint": "Attacker-controlled regular expressions can turn input matching into a denial-of-service vector.",
+            "Description": "Compiling and executing arbitrary user-supplied regexes can trigger catastrophic backtracking or resource exhaustion."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "for (size_t inner = 0; inner < records.size(); ++inner) { // PERFORMANCE: quadratic loop",
+            "Correct Code": "Replace the nested full scan with a single-pass or indexed algorithm that does only the comparisons the feature actually needs.",
+            "Hint": "Ask whether the second loop is really necessary.",
+            "Description": "The nested traversal makes the routine O(n^2), which quickly becomes expensive as the dataset grows."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              29,
+              49
+            ],
+            "Vulnerability Code": "workers.emplace_back([record]() { cout << record.ownerName << endl; }); // SCALABILITY: thread per record",
+            "Correct Code": "Use a bounded worker pool or async queue so concurrency stays capped even when the record count spikes.",
+            "Hint": "A new thread per item stops scaling long before the dataset is large.",
+            "Description": "The implementation creates one OS thread for each record, which can exhaust memory and scheduler capacity under load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              42,
+              62
+            ],
+            "Vulnerability Code": "if (record.zipCode == \"10001\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on zipCode, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 46,
+      "Code": "EventReplayProcessor.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              15,
+              35
+            ],
+            "Vulnerability Code": "strcpy(buffer, input.c_str()); // SECURITY: fixed-size buffer overflow",
+            "Correct Code": "Use std::string directly or a bounded copy routine that validates input length before writing into a fixed-size buffer.",
+            "Hint": "Never copy untrusted data into a fixed-size buffer without enforcing a size limit.",
+            "Description": "The code copies attacker-controlled input into a 16-byte stack buffer without bounds checking, a classic buffer overflow pattern often discussed in C/C++ Stack Overflow threads."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              21,
+              41
+            ],
+            "Vulnerability Code": "sort(records.begin(), records.end(), [](const Record& a, const Record& b) { // PERFORMANCE: repeated full sort",
+            "Correct Code": "Sort once when the ordering actually changes, or maintain an incremental ranking structure instead of resorting on every iteration.",
+            "Hint": "Repeatedly sorting an unchanged collection is wasted work.",
+            "Description": "The code performs a full sort inside a loop, multiplying the cost of ranking without changing the data between sorts."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              31,
+              51
+            ],
+            "Vulnerability Code": "while (getline(file, line)) { // SCALABILITY: load everything into memory",
+            "Correct Code": "Stream the file incrementally, paginate, or process chunks instead of materializing the full dataset at once.",
+            "Hint": "Batching helps when a resource may be much larger than memory.",
+            "Description": "The function accumulates the whole file in memory, which becomes brittle and expensive on large audit logs."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              39,
+              59
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.eventPayload << \",\" << record.disabilityStatus << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing eventPayload in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes eventPayload together with disabilityStatus directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              43,
+              63
+            ],
+            "Vulnerability Code": "if (record.disabilityStatus == \"Yes\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 47,
+      "Code": "LegacyPricingManager.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              13,
+              33
+            ],
+            "Vulnerability Code": "string sql = \"SELECT * FROM records WHERE ownerName = '\" + ownerName + \"'\"; // SECURITY: SQL injection",
+            "Correct Code": "Replace string concatenation with parameterized queries or prepared statements so user data never becomes part of executable SQL.",
+            "Hint": "Treat query structure and user data as separate things.",
+            "Description": "User-controlled text is concatenated directly into the SQL statement, enabling injection attacks that can change query semantics."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              20,
+              40
+            ],
+            "Vulnerability Code": "report += record.id + \",\" + record.ownerName + \",\" + to_string(record.score) + \"\\n\"; // PERFORMANCE: repeated string growth",
+            "Correct Code": "Reserve capacity up front, use an ostringstream, or stream directly to the destination instead of repeated concatenation in a loop.",
+            "Hint": "Repeated append operations can trigger many reallocations.",
+            "Description": "The report string grows repeatedly inside the loop, causing avoidable allocations and copies for large datasets."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              28,
+              48
+            ],
+            "Vulnerability Code": "lock_guard<mutex> guard(recordsMutex); // SCALABILITY: single global lock",
+            "Correct Code": "Narrow the critical section, shard the lock, or redesign the data flow so unrelated work does not serialize behind one mutex.",
+            "Hint": "A single global lock can turn concurrency into a queue.",
+            "Description": "The global mutex forces all callers through one serialized path, which becomes a throughput bottleneck under concurrent load."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              40,
+              60
+            ],
+            "Vulnerability Code": "if (record.pregnancyStatus == \"Pregnant\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on pregnancyStatus, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "ofstream file(\"legacypricingmanager.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 48,
+      "Code": "ConfigRegistry.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "system(command.c_str()); // SECURITY: command injection",
+            "Correct Code": "Avoid shell composition. Call a fixed executable with validated arguments through a safe process API or a whitelist-based dispatcher.",
+            "Hint": "If untrusted text reaches a shell, the shell can reinterpret it as commands.",
+            "Description": "The program builds a shell command from untrusted input and executes it, allowing attackers to inject arbitrary operating-system commands."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "ifstream file(record.id + \".log\"); // PERFORMANCE: file open inside hot loop",
+            "Correct Code": "Batch I/O, cache repeated resources, or move file access out of the hot loop if the same data is inspected frequently.",
+            "Hint": "Opening files repeatedly inside a tight loop is expensive.",
+            "Description": "The loop pays the full file-open cost for every record, which becomes a major slowdown during larger scans."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              26,
+              46
+            ],
+            "Vulnerability Code": "saveRecord(record); // SCALABILITY: synchronous per-record write",
+            "Correct Code": "Buffer, batch, or queue writes so the system is not forced into one blocking filesystem operation per record.",
+            "Hint": "High-volume workloads often need batching instead of per-item synchronous work.",
+            "Description": "Each record is written synchronously and individually, which magnifies latency and limits throughput as volume grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              32,
+              52
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.configPath << \",\" << record.university << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing configPath in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes configPath together with university directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              10,
+              30
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Encapsulate mutable state behind a repository or service abstraction instead of exposing a shared global container.",
+            "Hint": "Global mutable state increases coupling and makes tests harder to isolate.",
+            "Description": "The global record container makes the module harder to reason about, harder to test, and more vulnerable to accidental side effects."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 49,
+      "Code": "OrderWorkflowHandler.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              14,
+              34
+            ],
+            "Vulnerability Code": "srand(static_cast<unsigned>(time(nullptr))); // SECURITY: predictable random seed",
+            "Correct Code": "Use a cryptographically secure token generator such as OS-backed randomness and avoid reseeding on each call.",
+            "Hint": "Time-based seeding makes tokens guessable.",
+            "Description": "The token generator seeds rand() with the current time, which makes issued tokens predictable enough for attackers to brute-force or replay."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              23,
+              43
+            ],
+            "Vulnerability Code": "double calculateBatchScore(vector<Record> localRecords) { // PERFORMANCE: pass by value",
+            "Correct Code": "Pass the collection as const vector<Record>& so the function avoids copying the entire dataset.",
+            "Hint": "Large collections should usually be passed by const reference.",
+            "Description": "The function copies the full record vector on every call, increasing memory pressure and CPU time."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              11,
+              31
+            ],
+            "Vulnerability Code": "vector<Record> records; // SCALABILITY: all data kept in memory",
+            "Correct Code": "Move record storage behind a repository or database-backed service so the application does not require all data to live in process memory.",
+            "Hint": "Think about what happens when the record count grows from hundreds to millions.",
+            "Description": "Keeping the full dataset in a single in-memory vector limits horizontal scaling and inflates memory usage as traffic grows."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "if (record.nativeLanguage == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Remove protected-attribute based branching and replace it with objective, explainable criteria tied to legitimate business requirements.",
+            "Hint": "Protected or highly sensitive personal attributes should not drive outcomes directly.",
+            "Description": "The decision path directly favors or penalizes records based on nativeLanguage, which introduces bias and fairness concerns."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              37,
+              57
+            ],
+            "Vulnerability Code": "if (record.nativeLanguage == \"AccentA\") { // ETHICS: biased decision",
+            "Correct Code": "Move business policy into a dedicated configuration or policy layer so rules can be audited, tested, and changed without editing application code.",
+            "Hint": "Hardcoded policy logic is brittle and difficult to evolve safely.",
+            "Description": "The rule is embedded directly in application code, which makes policy changes error-prone and spreads business logic into the wrong layer."
+          }
+        ]
+      }
+    },
+    {
+      "Problem Number": 50,
+      "Code": "PartnerFeedImporter.cpp",
+      "Vulnerabilities": {
+        "Security": [
+          {
+            "Line Number": [
+              12,
+              32
+            ],
+            "Vulnerability Code": "ifstream file(\"exports/\" + fileName); // SECURITY: path traversal",
+            "Correct Code": "Normalize the path, reject traversal sequences, and resolve the final path against a fixed allowlisted directory before opening files.",
+            "Hint": "User-controlled path fragments should never be joined directly into filesystem paths.",
+            "Description": "The code opens whatever path the caller provides under a string prefix, so values like ../ can escape the intended directory."
+          }
+        ],
+        "Performance": [
+          {
+            "Line Number": [
+              19,
+              39
+            ],
+            "Vulnerability Code": "for (auto record : records) { // PERFORMANCE: copies each record",
+            "Correct Code": "Iterate by const reference with for (const auto& record : records) to avoid copying each element.",
+            "Hint": "Range-for loops copy objects unless you explicitly use references.",
+            "Description": "Each loop iteration copies the whole record object even though the code only needs read-only access."
+          }
+        ],
+        "Scalability": [
+          {
+            "Line Number": [
+              25,
+              45
+            ],
+            "Vulnerability Code": "for (auto& record : records) { // SCALABILITY: linear search",
+            "Correct Code": "Use an indexed structure such as unordered_map keyed by record ID, or push lookups into a datastore with an index.",
+            "Hint": "Hot-path lookups should not require scanning the entire collection.",
+            "Description": "Every lookup walks the vector from start to finish, which becomes slower and slower as the number of records increases."
+          }
+        ],
+        "Ethics": [
+          {
+            "Line Number": [
+              35,
+              55
+            ],
+            "Vulnerability Code": "file << record.ownerName << \",\" << record.partnerFeed << \",\" << record.religion << endl; // ETHICS: plaintext sensitive export",
+            "Correct Code": "Minimize collection, avoid writing partnerFeed in plaintext, and protect any retained sensitive data with encryption, access controls, and a retention policy.",
+            "Hint": "Collect and store only the sensitive data the feature truly needs.",
+            "Description": "The export writes partnerFeed together with religion directly to disk, creating avoidable privacy and compliance risk."
+          }
+        ],
+        "Maintainability": [
+          {
+            "Line Number": [
+              34,
+              54
+            ],
+            "Vulnerability Code": "ofstream file(\"partnerfeedimporter.csv\", ios::app); // MAINTAINABILITY: no file error handling",
+            "Correct Code": "Check whether the file opened successfully and route failures through structured error handling instead of assuming the write always works.",
+            "Hint": "External resources fail; code should say what happens when they do.",
+            "Description": "The code assumes file creation succeeds and contains no handling for permission, disk, or path failures."
+          }
+        ]
+      }
+    }
+  ]
+}
