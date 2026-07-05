@@ -8,8 +8,8 @@ export default async function SiteAuthControls() {
 
   if (!clerkEnabled) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-        <span style={{ fontSize: "12px", color: "#8ba0a6" }}>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs text-foreground-muted">
           Add Clerk keys to enable login.
         </span>
       </div>
@@ -18,28 +18,17 @@ export default async function SiteAuthControls() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-        <Link href="/sign-in" style={{
-          color: "#c9d6da",
-          textDecoration: "none",
-          border: "1px solid rgba(201,214,218,0.16)",
-          borderRadius: "999px",
-          padding: "8px 16px",
-          fontSize: "13px",
-          fontWeight: 600,
-        }}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href="/sign-in"
+          className="rounded-full border border-border-strong px-4 py-2 text-[13px] font-semibold text-foreground-muted transition-colors hover:text-foreground"
+        >
           Log In
         </Link>
-        <Link href="/sign-up" style={{
-          background: "#3ddc84",
-          color: "#0d1a1f",
-          textDecoration: "none",
-          borderRadius: "999px",
-          padding: "8px 18px",
-          fontSize: "13px",
-          fontWeight: 700,
-          boxShadow: "0 0 24px rgba(61,220,132,0.18)",
-        }}>
+        <Link
+          href="/sign-up"
+          className="rounded-full bg-brand px-4.5 py-2 text-[13px] font-bold text-background shadow-[0_0_24px_var(--brand-dim)]"
+        >
           Sign Up
         </Link>
       </div>
@@ -47,7 +36,7 @@ export default async function SiteAuthControls() {
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+    <div className="flex flex-wrap items-center gap-3">
       <UserButton afterSignOutUrl="/" />
     </div>
   );

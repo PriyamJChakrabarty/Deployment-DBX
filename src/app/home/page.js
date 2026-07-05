@@ -30,12 +30,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#0d1a1f",
-      color: "#c9d6da",
-      fontFamily: "'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif",
-    }}>
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <HeartbeatClient />
       <SiteNav active="/home" />
       <HomeClient stats={stats} history={history} raidHistory={raidHistory} />

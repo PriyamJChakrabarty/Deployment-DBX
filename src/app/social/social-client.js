@@ -2,19 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { CATEGORY_COLORS, COLORS } from "@/lib/theme";
 
-const C = {
-  bg:      "#0d1a1f",
-  panel:   "#0a1419",
-  sidebar: "#060c0f",
-  card:    "#0e191f",
-  border:  "rgba(201,214,218,0.07)",
-  green:   "#3ddc84",
-  cyan:    "#22d3ee",
-  text:    "#e8f0f3",
-  sub:     "#8ba0a6",
-  muted:   "#4a6570",
-};
+// Accent hues reused from the category signal palette (hue-matched, not
+// semantically tied to bug categories here — same convention as
+// TEAM_COLORS in home-client.js).
+const GREEN = CATEGORY_COLORS.Scalability; // #2dd881
+const CYAN  = CATEGORY_COLORS.Ethics;      // #22d3ee
 
 // ── SVG icons ──────────────────────────────────────────────────
 function IconChat({ size = 20 }) {
@@ -32,14 +26,6 @@ function IconPeople({ size = 20 }) {
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-function IconShield({ size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 }
@@ -80,27 +66,30 @@ async function api(url, opts = {}) {
   return d;
 }
 
-function Avi({ name, size = 36, color = C.green, online = false }) {
+function Avi({ name, size = 36, color = COLORS.brand, online = false }) {
   const dotSize = Math.max(8, Math.round(size * 0.28));
   return (
-    <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
-      <div style={{
-        width: size, height: size, borderRadius: "50%",
-        background: `linear-gradient(135deg, ${color}28, ${color}0a)`,
-        border: `1.5px solid ${color}44`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: Math.round(size * 0.4), fontWeight: 700, color,
-        userSelect: "none", letterSpacing: "-0.01em",
-      }}>
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="flex select-none items-center justify-center rounded-full tracking-tight"
+        style={{
+          width: size, height: size,
+          background: `linear-gradient(135deg, ${color}28, ${color}0a)`,
+          border: `1.5px solid ${color}44`,
+          fontSize: Math.round(size * 0.4), fontWeight: 700, color,
+        }}
+      >
         {(name || "?")[0].toUpperCase()}
       </div>
       {online && (
-        <div style={{
-          position: "absolute", bottom: 0, right: 0,
-          width: dotSize, height: dotSize, borderRadius: "50%",
-          background: C.green, border: `2px solid ${C.bg}`,
-          boxShadow: "0 0 6px rgba(61,220,132,0.5)",
-        }} />
+        <div
+          className="absolute bottom-0 right-0 rounded-full border-[2px] border-background"
+          style={{
+            width: dotSize, height: dotSize,
+            background: GREEN,
+            boxShadow: `0 0 6px color-mix(in oklab, ${GREEN} 50%, transparent)`,
+          }}
+        />
       )}
     </div>
   );
@@ -109,18 +98,18 @@ function Avi({ name, size = 36, color = C.green, online = false }) {
 // ── Sub-components ─────────────────────────────────────────────
 function Bubble({ msg, isMine }) {
   return (
-    <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start" }}>
-      <div style={{
-        maxWidth: "70%",
-        background: isMine ? "rgba(61,220,132,0.12)" : "rgba(201,214,218,0.05)",
-        border: `1px solid ${isMine ? "rgba(61,220,132,0.28)" : "rgba(201,214,218,0.1)"}`,
-        borderRadius: isMine ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
-        padding: "9px 13px",
-      }}>
-        <p style={{ margin: 0, fontSize: "13.5px", color: C.text, lineHeight: 1.5, wordBreak: "break-word" }}>
+    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[70%] rounded-[14px] border px-[13px] py-[9px] ${
+          isMine
+            ? "rounded-br-[3px] border-signal-scalability/30 bg-signal-scalability/[0.12]"
+            : "rounded-bl-[3px] border-border bg-foreground/5"
+        }`}
+      >
+        <p className="m-0 break-words text-[13.5px] leading-relaxed text-foreground">
           {msg.body}
         </p>
-        <p style={{ margin: "4px 0 0", fontSize: "10px", color: C.muted, textAlign: isMine ? "right" : "left" }}>
+        <p className={`mt-1 mb-0 text-[10px] text-foreground-subtle ${isMine ? "text-right" : "text-left"}`}>
           {timeAgo(msg.createdAt)}
         </p>
       </div>
@@ -135,25 +124,21 @@ function InboxRow({ conv, active, myClerkId, onClick, online }) {
   return (
     <button
       onClick={onClick}
-      style={{
-        width: "100%", background: active ? "rgba(61,220,132,0.05)" : "none",
-        border: "none", cursor: "pointer",
-        display: "flex", alignItems: "center", gap: "11px",
-        padding: "10px 16px",
-        borderLeft: active ? `2px solid ${C.green}` : "2px solid transparent",
-      }}
+      className={`flex w-full cursor-pointer items-center gap-[11px] border-l-2 px-4 py-2.5 text-left ${
+        active ? "border-signal-scalability bg-signal-scalability/5" : "border-transparent"
+      }`}
     >
-      <Avi name={name} size={38} color={C.cyan} online={online} />
-      <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "130px" }}>
+      <Avi name={name} size={38} color={CYAN} online={online} />
+      <div className="min-w-0 flex-1 text-left">
+        <div className="flex items-baseline justify-between">
+          <span className="max-w-[130px] overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-semibold text-foreground">
             {name}
           </span>
-          <span style={{ fontSize: "10px", color: C.muted, flexShrink: 0, marginLeft: "6px" }}>
+          <span className="ml-1.5 flex-shrink-0 text-[10px] text-foreground-subtle">
             {timeAgo(last?.createdAt || conv.updatedAt)}
           </span>
         </div>
-        <div style={{ fontSize: "12px", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "2px" }}>
+        <div className="mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-foreground-subtle">
           {last ? `${mine ? "You: " : ""}${last.body}` : ""}
         </div>
       </div>
@@ -164,41 +149,30 @@ function InboxRow({ conv, active, myClerkId, onClick, online }) {
 function SuggestCard({ user, isFollowed, onFollow, onMessage, online }) {
   const name = dname(user);
   return (
-    <div style={{
-      background: C.card, border: `1px solid ${C.border}`, borderRadius: "10px",
-      padding: "14px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
-      width: "130px", flexShrink: 0,
-    }}>
-      <Avi name={name} size={44} color={C.green} online={online} />
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: "12px", fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "110px" }}>
+    <div className="flex w-[130px] flex-shrink-0 flex-col items-center gap-2 rounded-[10px] border border-border bg-surface-2 p-3.5">
+      <Avi name={name} size={44} color={GREEN} online={online} />
+      <div className="text-center">
+        <div className="max-w-[110px] overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold text-foreground">
           {name}
         </div>
-        <div style={{ fontSize: "10px", color: C.muted, marginTop: "2px" }}>
+        <div className="mt-0.5 text-[10px] text-foreground-subtle">
           {user.bestScore > 0 ? `${user.bestScore} pts` : "New"}
         </div>
       </div>
-      <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+      <div className="flex w-full gap-1.5">
         <button
           onClick={onFollow}
-          style={{
-            flex: 1, fontSize: "11px", fontWeight: 700, padding: "5px 0",
-            borderRadius: "6px", cursor: "pointer",
-            background: isFollowed ? "transparent" : C.green,
-            color: isFollowed ? C.muted : "#0d1a1f",
-            border: `1px solid ${isFollowed ? C.border : C.green}`,
-          }}
+          className={`flex-1 rounded-md border py-1 text-[11px] font-bold ${
+            isFollowed
+              ? "border-border text-foreground-subtle"
+              : "border-signal-scalability bg-signal-scalability text-background"
+          }`}
         >
           {isFollowed ? "Unfollow" : "Follow"}
         </button>
         <button
           onClick={onMessage}
-          style={{
-            flex: 1, fontSize: "11px", fontWeight: 700, padding: "5px 0",
-            borderRadius: "6px", cursor: "pointer",
-            background: "transparent", color: C.cyan,
-            border: `1px solid rgba(34,211,238,0.3)`,
-          }}
+          className="flex-1 rounded-md border border-signal-ethics/30 text-[11px] font-bold text-signal-ethics"
         >
           DM
         </button>
@@ -211,59 +185,38 @@ function FollowCard({ user, onMessage, onUnfollow, onChallenge, online }) {
   const name = dname(user);
   const hasNote = !!user.noteText;
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: "12px",
-      padding: "10px 14px", borderRadius: "10px",
-      background: C.card, border: `1px solid ${C.border}`,
-    }}>
-      <Avi name={name} size={40} color={C.cyan} online={online} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+    <div className="flex items-center gap-3 rounded-[10px] border border-border bg-surface-2 px-3.5 py-2.5">
+      <Avi name={name} size={40} color={CYAN} online={online} />
+      <div className="min-w-0 flex-1">
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-semibold text-foreground">
           {name}
         </div>
         {hasNote ? (
-          <div style={{ fontSize: "11.5px", color: C.sub, marginTop: "3px", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="mt-[3px] overflow-hidden text-ellipsis whitespace-nowrap text-[11.5px] italic text-foreground-muted">
             &ldquo;{user.noteText}&rdquo;
           </div>
         ) : (
-          <div style={{ fontSize: "11px", color: C.muted, marginTop: "3px" }}>
+          <div className="mt-[3px] text-[11px] text-foreground-subtle">
             {user.bestScore > 0 ? `${user.bestScore} pts` : "No note yet"}
           </div>
         )}
       </div>
-      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+      <div className="flex flex-shrink-0 gap-1.5">
         <button
           onClick={onUnfollow}
-          style={{
-            fontSize: "11px", fontWeight: 600, padding: "5px 10px",
-            borderRadius: "6px", cursor: "pointer",
-            background: "transparent", color: C.muted,
-            border: `1px solid ${C.border}`,
-          }}
+          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground-subtle"
         >
           Unfollow
         </button>
         <button
           onClick={onChallenge}
-          style={{
-            fontSize: "11px", fontWeight: 700, padding: "5px 12px",
-            borderRadius: "6px", cursor: "pointer",
-            background: "rgba(245,185,66,0.08)", color: "#f5b942",
-            border: "1px solid rgba(245,185,66,0.3)",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,185,66,0.16)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,185,66,0.08)"; }}
+          className="rounded-md border border-signal-performance/30 bg-signal-performance/[0.08] px-3 py-1 text-[11px] font-bold text-signal-performance hover:bg-signal-performance/[0.16]"
         >
           ⚔️ Challenge
         </button>
         <button
           onClick={onMessage}
-          style={{
-            fontSize: "11px", fontWeight: 700, padding: "5px 12px",
-            borderRadius: "6px", cursor: "pointer",
-            background: "transparent", color: C.cyan,
-            border: `1px solid rgba(34,211,238,0.3)`,
-          }}
+          className="rounded-md border border-signal-ethics/30 px-3 py-1 text-[11px] font-bold text-signal-ethics"
         >
           DM
         </button>
@@ -471,9 +424,9 @@ export default function SocialClient({ myClerkId, myNote }) {
 
   if (!myClerkId) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "16px" }}>
-        <p style={{ color: C.sub, fontSize: "15px" }}>Sign in to access social features.</p>
-        <Link href="/sign-in" style={{ background: C.green, color: "#0d1a1f", textDecoration: "none", padding: "10px 28px", borderRadius: "8px", fontWeight: 800, fontSize: "14px" }}>
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <p className="text-[15px] text-foreground-muted">Sign in to access social features.</p>
+        <Link href="/sign-in" className="rounded-lg bg-brand px-7 py-2.5 text-sm font-extrabold text-background">
           Sign In →
         </Link>
       </div>
@@ -485,16 +438,10 @@ export default function SocialClient({ myClerkId, myNote }) {
   const chatOtherClerkId = pendingTarget?.clerkId ?? activeConv?.otherClerkId ?? null;
 
   return (
-    <div style={{ display: "flex", height: "100%", width: "100%", overflow: "hidden" }}>
+    <div className="flex h-full w-full overflow-hidden">
 
       {/* ── Icon sidebar ────────────────────────────────────── */}
-      <div style={{
-        width: "52px", flexShrink: 0,
-        background: C.sidebar,
-        borderRight: `1px solid ${C.border}`,
-        display: "flex", flexDirection: "column", alignItems: "center",
-        paddingTop: "18px", gap: "8px",
-      }}>
+      <div className="flex w-[52px] flex-shrink-0 flex-col items-center gap-2 border-r border-border bg-background pt-[18px]">
         {[
           { id: "messages", Icon: IconChat,   label: "Messages" },
           { id: "people",   Icon: IconPeople, label: "People"   },
@@ -503,14 +450,11 @@ export default function SocialClient({ myClerkId, myNote }) {
             key={id}
             onClick={() => setView(id)}
             title={label}
-            style={{
-              width: "38px", height: "38px", borderRadius: "10px",
-              background: view === id ? "rgba(61,220,132,0.12)" : "transparent",
-              border: `1px solid ${view === id ? "rgba(61,220,132,0.32)" : "transparent"}`,
-              color: view === id ? C.green : C.muted,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", transition: "all 0.15s", padding: 0,
-            }}
+            className={`flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border p-0 transition-colors ${
+              view === id
+                ? "border-signal-scalability/30 bg-signal-scalability/[0.12] text-signal-scalability"
+                : "border-transparent text-foreground-subtle"
+            }`}
           >
             <Icon size={18} />
           </button>
@@ -521,23 +465,18 @@ export default function SocialClient({ myClerkId, myNote }) {
       {view === "messages" && (
         <>
           {/* Inbox list */}
-          <div style={{
-            width: "265px", flexShrink: 0,
-            borderRight: `1px solid ${C.border}`,
-            background: C.panel,
-            display: "flex", flexDirection: "column", height: "100%",
-          }}>
-            <div style={{ padding: "14px 16px 10px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: C.text, letterSpacing: "-0.01em" }}>Messages</span>
+          <div className="flex h-full w-[265px] flex-shrink-0 flex-col border-r border-border bg-surface">
+            <div className="flex-shrink-0 border-b border-border px-4 pb-2.5 pt-3.5">
+              <span className="text-[13px] font-bold tracking-tight text-foreground">Messages</span>
             </div>
-            <div style={{ flex: 1, overflowY: "auto" }}>
+            <div className="flex-1 overflow-y-auto">
               {!inboxLoaded && (
-                <p style={{ fontSize: "12px", color: C.muted, textAlign: "center", padding: "24px 16px" }}>Loading…</p>
+                <p className="px-4 py-6 text-center text-xs text-foreground-subtle">Loading…</p>
               )}
               {inboxLoaded && inbox.length === 0 && !pendingTarget && (
-                <div style={{ padding: "32px 16px", textAlign: "center" }}>
-                  <p style={{ fontSize: "13px", color: C.muted, margin: "0 0 10px" }}>No messages yet.</p>
-                  <button onClick={() => setView("people")} style={{ background: "none", border: "none", color: C.cyan, cursor: "pointer", fontSize: "12px", textDecoration: "underline" }}>
+                <div className="px-4 py-8 text-center">
+                  <p className="m-0 mb-2.5 text-[13px] text-foreground-subtle">No messages yet.</p>
+                  <button onClick={() => setView("people")} className="cursor-pointer border-none bg-transparent text-xs text-signal-ethics underline">
                     Find people →
                   </button>
                 </div>
@@ -545,18 +484,13 @@ export default function SocialClient({ myClerkId, myNote }) {
 
               {/* Pending target row (shown while first message hasn't been sent yet) */}
               {pendingTarget && (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: "11px",
-                  padding: "10px 16px",
-                  borderLeft: `2px solid ${C.cyan}`,
-                  background: "rgba(34,211,238,0.04)",
-                }}>
-                  <Avi name={pendingTarget.displayName} size={38} color={C.cyan} online={onlineIds.has(pendingTarget.clerkId)} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div className="flex items-center gap-[11px] border-l-2 border-signal-ethics bg-signal-ethics/5 px-4 py-2.5">
+                  <Avi name={pendingTarget.displayName} size={38} color={CYAN} online={onlineIds.has(pendingTarget.clerkId)} />
+                  <div className="min-w-0 flex-1">
+                    <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-semibold text-foreground">
                       {pendingTarget.displayName}
                     </div>
-                    <div style={{ fontSize: "11px", color: C.cyan, marginTop: "2px" }}>New conversation</div>
+                    <div className="mt-0.5 text-[11px] text-signal-ethics">New conversation</div>
                   </div>
                 </div>
               )}
@@ -575,29 +509,29 @@ export default function SocialClient({ myClerkId, myNote }) {
           </div>
 
           {/* Chat area */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", background: C.bg, minWidth: 0 }}>
+          <div className="flex h-full min-w-0 flex-1 flex-col bg-background">
             {chatName ? (
               <>
                 {/* Header */}
-                <div style={{ padding: "12px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                  <Avi name={chatName} size={32} color={C.cyan} online={onlineIds.has(chatOtherClerkId)} />
+                <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border px-5 py-3">
+                  <Avi name={chatName} size={32} color={CYAN} online={onlineIds.has(chatOtherClerkId)} />
                   <div>
-                    <span style={{ fontSize: "14px", fontWeight: 600, color: C.text }}>{chatName}</span>
+                    <span className="text-sm font-semibold text-foreground">{chatName}</span>
                     {pendingTarget && (
-                      <div style={{ fontSize: "11px", color: C.cyan, marginTop: "1px" }}>Send a message to start the conversation</div>
+                      <div className="mt-px text-[11px] text-signal-ethics">Send a message to start the conversation</div>
                     )}
                   </div>
                 </div>
 
                 {/* Messages */}
-                <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
                   {!pendingTarget && messages.length === 0 && (
-                    <p style={{ fontSize: "13px", color: C.muted, textAlign: "center", marginTop: "48px" }}>
+                    <p className="mt-12 text-center text-[13px] text-foreground-subtle">
                       Say hello to {chatName}!
                     </p>
                   )}
                   {pendingTarget && (
-                    <p style={{ fontSize: "13px", color: C.muted, textAlign: "center", marginTop: "48px" }}>
+                    <p className="mt-12 text-center text-[13px] text-foreground-subtle">
                       No messages yet. Send one below!
                     </p>
                   )}
@@ -608,39 +542,33 @@ export default function SocialClient({ myClerkId, myNote }) {
                 </div>
 
                 {/* Input */}
-                <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, display: "flex", gap: "8px", flexShrink: 0, alignItems: "center" }}>
+                <div className="flex flex-shrink-0 items-center gap-2 border-t border-border px-4 py-2.5">
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                     placeholder={`Message ${chatName}…`}
                     maxLength={500}
-                    style={{
-                      flex: 1, background: C.panel, border: `1px solid ${C.border}`,
-                      borderRadius: "8px", padding: "9px 14px", fontSize: "13px", color: C.text, outline: "none",
-                    }}
+                    className="flex-1 rounded-lg border border-border bg-surface px-3.5 py-2.5 text-[13px] text-foreground outline-none"
                   />
                   <button
                     onClick={handleSend}
                     disabled={!input.trim() || sending}
-                    style={{
-                      width: "38px", height: "38px", borderRadius: "8px", flexShrink: 0,
-                      background: input.trim() && !sending ? C.green : "transparent",
-                      color: input.trim() && !sending ? "#0d1a1f" : C.muted,
-                      border: `1px solid ${input.trim() && !sending ? C.green : C.border}`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: input.trim() && !sending ? "pointer" : "not-allowed",
-                    }}
+                    className={`flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-lg border ${
+                      input.trim() && !sending
+                        ? "cursor-pointer border-signal-scalability bg-signal-scalability text-background"
+                        : "cursor-not-allowed border-border bg-transparent text-foreground-subtle"
+                    }`}
                   >
                     <IconSend size={15} />
                   </button>
                 </div>
               </>
             ) : (
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "12px" }}>
-                <div style={{ color: C.muted }}><IconChat size={36} /></div>
-                <p style={{ fontSize: "14px", color: C.sub, margin: 0 }}>Select a conversation</p>
-                <button onClick={() => setView("people")} style={{ background: "none", border: "none", color: C.cyan, cursor: "pointer", fontSize: "12px", textDecoration: "underline" }}>
+              <div className="flex flex-1 flex-col items-center justify-center gap-3">
+                <div className="text-foreground-subtle"><IconChat size={36} /></div>
+                <p className="m-0 text-sm text-foreground-muted">Select a conversation</p>
+                <button onClick={() => setView("people")} className="cursor-pointer border-none bg-transparent text-xs text-signal-ethics underline">
                   Find people →
                 </button>
               </div>
@@ -651,20 +579,20 @@ export default function SocialClient({ myClerkId, myNote }) {
 
       {/* ── People view ─────────────────────────────────────── */}
       {view === "people" && (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
           {/* Top — Suggested */}
-          <div style={{ flex: "0 0 44%", display: "flex", flexDirection: "column", borderBottom: `2px solid ${C.border}`, overflow: "hidden" }}>
-            <div style={{ padding: "13px 24px 10px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: C.sub, letterSpacing: "0.07em", textTransform: "uppercase" }}>
+          <div className="flex flex-[0_0_44%] flex-col overflow-hidden border-b-2 border-border">
+            <div className="flex-shrink-0 border-b border-border px-6 pb-2.5 pt-3.5">
+              <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-foreground-muted">
                 Suggested Connections
               </span>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 24px" }}>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
               {suggested.length === 0 ? (
-                <p style={{ fontSize: "13px", color: C.muted }}>No suggestions right now.</p>
+                <p className="text-[13px] text-foreground-subtle">No suggestions right now.</p>
               ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                <div className="flex flex-wrap gap-3">
                   {suggested.map((u) => (
                     <SuggestCard
                       key={u.clerkId}
@@ -681,21 +609,17 @@ export default function SocialClient({ myClerkId, myNote }) {
           </div>
 
           {/* Bottom — Following */}
-          <div style={{ flex: "0 0 56%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ padding: "13px 24px 10px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: C.sub, letterSpacing: "0.07em", textTransform: "uppercase" }}>
+          <div className="flex flex-[0_0_56%] flex-col overflow-hidden">
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 pb-2.5 pt-3.5">
+              <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-foreground-muted">
                 Following
               </span>
-              <span style={{ fontSize: "11px", color: C.muted }}>{following.length} people</span>
+              <span className="text-[11px] text-foreground-subtle">{following.length} people</span>
             </div>
 
             {/* My note */}
-            <div style={{
-              padding: "8px 24px", borderBottom: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", gap: "10px",
-              flexShrink: 0, background: "rgba(61,220,132,0.03)",
-            }}>
-              <Avi name="Me" size={28} color={C.green} />
+            <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border bg-signal-scalability/[0.03] px-6 py-2">
+              <Avi name="Me" size={28} color={GREEN} />
               {editNote ? (
                 <>
                   <input
@@ -705,27 +629,23 @@ export default function SocialClient({ myClerkId, myNote }) {
                     onKeyDown={(e) => { if (e.key === "Enter") saveNote(); if (e.key === "Escape") setEditNote(false); }}
                     maxLength={60}
                     placeholder="Your note for followers (60 chars)…"
-                    style={{
-                      flex: 1, background: C.panel,
-                      border: `1px solid rgba(61,220,132,0.3)`, borderRadius: "6px",
-                      padding: "5px 10px", fontSize: "12px", color: C.text, outline: "none",
-                    }}
+                    className="flex-1 rounded-md border border-signal-scalability/30 bg-surface px-2.5 py-1 text-xs text-foreground outline-none"
                   />
-                  <button onClick={saveNote} style={{ background: C.green, color: "#0d1a1f", border: "none", borderRadius: "5px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+                  <button onClick={saveNote} className="cursor-pointer rounded-[5px] border-none bg-signal-scalability px-2.5 py-1 text-[11px] font-bold text-background">
                     Save
                   </button>
-                  <button onClick={() => setEditNote(false)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: "11px" }}>
+                  <button onClick={() => setEditNote(false)} className="cursor-pointer border-none bg-transparent text-[11px] text-foreground-subtle">
                     Cancel
                   </button>
                 </>
               ) : (
                 <>
-                  <span style={{ flex: 1, fontSize: "12px", color: myNoteText ? C.sub : C.muted, fontStyle: myNoteText ? "italic" : "normal" }}>
+                  <span className={`flex-1 text-xs ${myNoteText ? "italic text-foreground-muted" : "text-foreground-subtle"}`}>
                     {myNoteText ? `"${myNoteText}"` : "Set your note for followers…"}
                   </span>
                   <button
                     onClick={() => { setNoteInput(myNoteText); setEditNote(true); }}
-                    style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: "5px", padding: "3px 9px", fontSize: "11px", color: C.sub, cursor: "pointer" }}
+                    className="cursor-pointer rounded-[5px] border border-border bg-transparent px-2.5 py-[3px] text-[11px] text-foreground-muted"
                   >
                     Edit
                   </button>
@@ -733,9 +653,9 @@ export default function SocialClient({ myClerkId, myNote }) {
               )}
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "12px 24px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-3">
               {following.length === 0 ? (
-                <p style={{ fontSize: "13px", color: C.muted }}>
+                <p className="text-[13px] text-foreground-subtle">
                   You&apos;re not following anyone yet.
                 </p>
               ) : (

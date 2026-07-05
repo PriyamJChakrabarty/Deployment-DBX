@@ -6,17 +6,13 @@ import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/ext-language_tools";
+import { CATEGORIES as CATS, RESULT_COLORS, COLORS, CATEGORY_COLORS } from "@/lib/theme";
 
 // ── Constants ──────────────────────────────────────────────────
-const CATS = [
-  { key: "Security",        icon: "🔒", color: "#ff5c5c" },
-  { key: "Performance",     icon: "⚡", color: "#f5b942" },
-  { key: "Scalability",     icon: "📈", color: "#3ddc84" },
-  { key: "Ethics",          icon: "⚖️",  color: "#22d3ee" },
-  { key: "Maintainability", icon: "🔧", color: "#a78bfa" },
-];
 const PTS_PER_FIX   = 20;
-const TEAM_COLORS   = ["#3ddc84", "#22d3ee"];
+// Team identity — Team 0 (mine) is brand, Team 1 (opponent) is Ethics cyan.
+// Matches the TEAM_COLORS convention already shipped in home-client.js's RaidRow.
+const TEAM_COLORS   = [COLORS.brand, CATEGORY_COLORS.Ethics];
 const TEAM_LABELS_DEFAULT = ["Alpha", "Bravo"];
 function getTeamLabel(teamId, formalTeams) {
   const formalTeam = formalTeams.find((team) => team.teamSideId === teamId);
@@ -63,28 +59,22 @@ function FileLeaf({ node, selectedPath, onSelect, fileProg }) {
     <button
       onClick={() => onSelect(node.path)}
       title={node.path}
+      className="flex w-full items-center gap-1.5 border-none py-1.5 pl-5 pr-2.5 text-left"
       style={{
-        width: "100%", background: "none", border: "none",
-        cursor: "pointer", textAlign: "left",
-        padding: "5px 10px 5px 20px",
-        display: "flex", alignItems: "center", gap: "7px",
-        borderLeft: isSel ? "2px solid #f5b942" : "2px solid transparent",
-        background: isSel ? "rgba(245,185,66,0.05)" : "transparent",
+        cursor: "pointer",
+        borderLeft: isSel ? "2px solid var(--signal-performance)" : "2px solid transparent",
+        background: isSel ? "rgba(255,176,32,0.05)" : "transparent",
       }}
     >
-      <span style={{ fontSize: "11px", flexShrink: 0 }}>📄</span>
-      <span style={{
-        fontSize: "12px", color: isSel ? "#e8f0f3" : "#8ba0a6",
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
-      }}>
+      <span className="flex-shrink-0 text-[11px]">📄</span>
+      <span
+        className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs"
+        style={{ color: isSel ? "var(--foreground)" : "var(--foreground-muted)" }}
+      >
         {node.name}
       </span>
       {fixed > 0 && (
-        <span style={{
-          fontSize: "10px", fontWeight: 700, color: "#f5b942",
-          background: "rgba(245,185,66,0.12)", padding: "1px 6px", borderRadius: "999px",
-          flexShrink: 0,
-        }}>
+        <span className="flex-shrink-0 rounded-full bg-signal-performance/[0.12] px-1.5 py-px text-[10px] font-bold text-signal-performance">
           {fixed}/5
         </span>
       )}
@@ -110,18 +100,14 @@ function FolderBranch({ node, selectedPath, onSelect, progress }) {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        style={{
-          width: "100%", background: "none", border: "none",
-          cursor: "pointer", textAlign: "left",
-          padding: "5px 10px", display: "flex", alignItems: "center", gap: "6px",
-        }}
+        className="flex w-full cursor-pointer items-center gap-1.5 border-none bg-none px-2.5 py-1.5 text-left"
       >
-        <span style={{ fontSize: "9px", color: "#4a6570", width: "10px", flexShrink: 0 }}>{open ? "▾" : "▸"}</span>
-        <span style={{ fontSize: "12px", flexShrink: 0 }}>📁</span>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "#8ba0a6" }}>{node.name}</span>
+        <span className="w-2.5 flex-shrink-0 text-[9px] text-foreground-subtle">{open ? "▾" : "▸"}</span>
+        <span className="flex-shrink-0 text-xs">📁</span>
+        <span className="text-xs font-semibold text-foreground-muted">{node.name}</span>
       </button>
       {open && (
-        <div style={{ paddingLeft: "14px" }}>
+        <div className="pl-3.5">
           {node.children.map((c) => (
             <FolderBranch key={c.name} node={c} selectedPath={selectedPath} onSelect={onSelect} progress={progress} />
           ))}
@@ -139,72 +125,68 @@ function CategoryRow({ cat, vulns, catProg, isActive, onToggle, onCheck, checkin
   const justFixed   = justChecked && (lastCheck?.added ?? 0) > 0;
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(201,214,218,0.05)" }}>
+    <div className="border-b border-border">
       <button
         onClick={onToggle}
-        style={{
-          width: "100%", border: "none", cursor: "pointer",
-          background: isActive ? `${cat.color}09` : "none",
-          padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px",
-        }}
+        className="flex w-full cursor-pointer items-center gap-2.5 border-none px-3.5 py-2.5 text-left"
+        style={{ background: isActive ? `${cat.color}09` : "none" }}
       >
-        <span style={{ fontSize: "15px", flexShrink: 0 }}>{cat.icon}</span>
-        <span style={{ fontSize: "12px", fontWeight: 600, flex: 1, textAlign: "left", color: isDone ? cat.color : "#e8f0f3" }}>
+        <span className="flex-shrink-0 text-[15px]">{cat.icon}</span>
+        <span className="flex-1 text-xs font-semibold" style={{ color: isDone ? cat.color : "var(--foreground)" }}>
           {cat.key}
         </span>
         {isDone ? (
-          <span style={{ fontSize: "9px", fontWeight: 800, color: cat.color, background: `${cat.color}18`, padding: "2px 7px", borderRadius: "4px" }}>
+          <span
+            className="rounded px-1.5 py-0.5 text-[9px] font-extrabold"
+            style={{ color: cat.color, background: `${cat.color}18` }}
+          >
             ✓ FIXED
           </span>
         ) : (
-          <span style={{ fontSize: "10px", color: fixedIdxs.length > 0 ? cat.color : "#4a6570" }}>
+          <span className="text-[10px]" style={{ color: fixedIdxs.length > 0 ? cat.color : "var(--foreground-subtle)" }}>
             {fixedIdxs.length}/{vulns.length}
           </span>
         )}
-        <span style={{ fontSize: "10px", color: "#4a6570", flexShrink: 0 }}>{isActive ? "▾" : "▸"}</span>
+        <span className="flex-shrink-0 text-[10px] text-foreground-subtle">{isActive ? "▾" : "▸"}</span>
       </button>
 
       {isActive && (
-        <div style={{ padding: "0 12px 12px 12px" }}>
+        <div className="px-3 pb-3">
           {vulns.map((vuln, vi) => {
             const fixed = fixedIdxs.includes(vi);
             const lines = Array.isArray(vuln["Line Number"]) ? vuln["Line Number"].join("–") : "?";
             return (
-              <div key={vi} style={{
-                marginBottom: "9px",
-                background: fixed ? "rgba(61,220,132,0.04)" : "#080f12",
-                border: `1px solid ${fixed ? "rgba(61,220,132,0.22)" : "rgba(201,214,218,0.06)"}`,
-                borderRadius: "7px", padding: "10px",
-              }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: cat.color, letterSpacing: "0.04em", marginBottom: "6px" }}>
+              <div
+                key={vi}
+                className="mb-2.5 rounded-md p-2.5"
+                style={{
+                  background: fixed ? `${RESULT_COLORS.win}0a` : "var(--background)",
+                  border: `1px solid ${fixed ? `${RESULT_COLORS.win}38` : "var(--border)"}`,
+                }}
+              >
+                <div className="mb-1.5 text-[10px] font-bold tracking-[0.04em]" style={{ color: cat.color }}>
                   📍 Lines {lines}
                 </div>
-                <pre style={{
-                  margin: "0 0 7px", fontSize: "10.5px",
-                  fontFamily: "'Cascadia Code','Fira Code','Consolas',monospace",
-                  color: "#c9d6da", background: "#0d1117",
-                  borderRadius: "4px", padding: "6px 8px",
-                  border: "1px solid rgba(201,214,218,0.05)",
-                  overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all", lineHeight: 1.5,
-                }}>
+                <pre className="m-0 mb-1.5 overflow-x-auto whitespace-pre-wrap break-all rounded border border-border bg-background p-1.5 font-mono text-[10.5px] leading-relaxed text-foreground">
                   {vuln["Vulnerability Code"]}
                 </pre>
-                <p style={{ margin: 0, fontSize: "11px", color: "#8ba0a6", lineHeight: 1.5 }}>
+                <p className="m-0 text-[11px] leading-relaxed text-foreground-muted">
                   💡 {vuln["Hint"]}
                 </p>
-                {fixed && <div style={{ marginTop: "6px", fontSize: "10.5px", fontWeight: 700, color: "#3ddc84" }}>✓ Fixed!</div>}
+                {fixed && <div className="mt-1.5 text-[10.5px] font-bold" style={{ color: RESULT_COLORS.win }}>✓ Fixed!</div>}
               </div>
             );
           })}
 
           {justChecked && (
-            <div style={{
-              padding: "8px 11px", borderRadius: "6px", marginBottom: "9px",
-              background: justFixed ? "rgba(61,220,132,0.1)" : "rgba(245,90,90,0.08)",
-              border: `1px solid ${justFixed ? "rgba(61,220,132,0.3)" : "rgba(245,90,90,0.2)"}`,
-              fontSize: "11.5px", fontWeight: 600,
-              color: justFixed ? "#3ddc84" : isDone ? "#3ddc84" : "#ff8080",
-            }}>
+            <div
+              className="mb-2.5 rounded-md px-2.5 py-2 text-[11.5px] font-semibold"
+              style={{
+                background: justFixed ? `${RESULT_COLORS.win}1a` : "rgba(255,59,92,0.08)",
+                border: `1px solid ${justFixed ? `${RESULT_COLORS.win}4d` : "var(--signal-security)"}`,
+                color: justFixed ? RESULT_COLORS.win : isDone ? RESULT_COLORS.win : "#ff8080",
+              }}
+            >
               {isDone
                 ? "✓ All fixed in this category!"
                 : justFixed
@@ -217,14 +199,11 @@ function CategoryRow({ cat, vulns, catProg, isActive, onToggle, onCheck, checkin
             <button
               onClick={onCheck}
               disabled={checking}
+              className="w-full rounded-md border-none py-2 text-xs font-extrabold transition-colors"
               style={{
-                width: "100%",
-                background: checking ? "rgba(201,214,218,0.05)" : cat.color,
-                color: checking ? "#4a6570" : "#0d1a1f",
-                border: "none", cursor: checking ? "not-allowed" : "pointer",
-                padding: "8px 0", borderRadius: "6px",
-                fontSize: "12px", fontWeight: 800,
-                transition: "background 0.15s",
+                background: checking ? "var(--surface-2)" : cat.color,
+                color: checking ? "var(--foreground-subtle)" : "var(--background)",
+                cursor: checking ? "not-allowed" : "pointer",
               }}
             >
               {checking ? "Checking…" : `Check ${cat.key} →`}
@@ -238,29 +217,24 @@ function CategoryRow({ cat, vulns, catProg, isActive, onToggle, onCheck, checkin
 
 // ── Live scoreboard (right panel top) ─────────────────────────
 function Scoreboard({ teams, myTeamId, formalTeams, timeLeft, matchStatus, winnerTeam }) {
-  const timerColor  = timeLeft !== null && timeLeft <= 10 ? "#ff5c5c" : "#f5b942";
+  const timerColor  = timeLeft !== null && timeLeft <= 10 ? "var(--signal-security)" : "var(--signal-performance)";
   const matchEnded  = matchStatus === "completed" || matchStatus === "abandoned";
 
   return (
-    <div style={{
-      padding: "10px 14px",
-      borderBottom: "1px solid rgba(201,214,218,0.07)",
-      flexShrink: 0,
-      background: "#060c0f",
-    }}>
+    <div className="flex-shrink-0 border-b border-border bg-background px-3.5 py-2.5">
       {/* Timer row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-        <span style={{ fontSize: "10px", fontWeight: 700, color: "#4a6570", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-foreground-subtle">
           Live Scoreboard
         </span>
         {matchEnded ? (
-          <span style={{ fontSize: "11px", fontWeight: 700, color: winnerTeam !== null ? TEAM_COLORS[winnerTeam] : "#f5b942" }}>
+          <span className="text-[11px] font-bold" style={{ color: winnerTeam !== null ? TEAM_COLORS[winnerTeam] : "var(--signal-performance)" }}>
             {matchStatus === "abandoned" ? "⚠ Abandoned" : winnerTeam !== null ? `${getTeamLabel(winnerTeam, formalTeams)} wins!` : "Draw"}
           </span>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <span style={{ fontSize: "11px", color: "#4a6570" }}>⏱</span>
-            <span style={{ fontSize: "14px", fontWeight: 900, color: timerColor, fontVariantNumeric: "tabular-nums" }}>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-foreground-subtle">⏱</span>
+            <span className="font-mono text-sm font-black" style={{ color: timerColor, fontVariantNumeric: "tabular-nums" }}>
               {timeLeft !== null ? formatTime(timeLeft) : "—"}
             </span>
           </div>
@@ -268,42 +242,39 @@ function Scoreboard({ teams, myTeamId, formalTeams, timeLeft, matchStatus, winne
       </div>
 
       {/* Teams */}
-      <div style={{ display: "flex", gap: "8px" }}>
+      <div className="flex gap-2">
         {teams.map((team) => {
           const color     = TEAM_COLORS[team.teamId];
           const isMyTeam  = team.teamId === myTeamId;
           const isWinner  = matchEnded && winnerTeam === team.teamId;
           return (
-            <div key={team.teamId} style={{
-              flex: 1,
-              background: isMyTeam ? `${color}0a` : "rgba(201,214,218,0.03)",
-              border: `1px solid ${isMyTeam ? `${color}30` : "rgba(201,214,218,0.06)"}`,
-              borderRadius: "8px", padding: "8px 10px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "6px" }}>
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color, flexShrink: 0 }} />
-                <span style={{ fontSize: "10px", fontWeight: 800, color, letterSpacing: "0.06em" }}>
+            <div
+              key={team.teamId}
+              className="flex-1 rounded-lg p-2.5"
+              style={{
+                background: isMyTeam ? `${color}0a` : "rgba(148,163,184,0.04)",
+                border: `1px solid ${isMyTeam ? `${color}30` : "var(--border)"}`,
+              }}
+            >
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: color }} />
+                <span className="text-[10px] font-extrabold tracking-[0.06em]" style={{ color }}>
                   {getTeamLabel(team.teamId, formalTeams)}
                   {isWinner && " 🏆"}
                 </span>
-                <span style={{ marginLeft: "auto", fontSize: "14px", fontWeight: 900, color, fontVariantNumeric: "tabular-nums" }}>
+                <span className="ml-auto font-mono text-sm font-black" style={{ color, fontVariantNumeric: "tabular-nums" }}>
                   {team.totalScore}
                 </span>
               </div>
               {team.players.map((p) => (
-                <div key={p.clerkId} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "2px 0", gap: "4px",
-                }}>
-                  <span style={{
-                    fontSize: "11px",
-                    color: p.isMe ? "#e8f0f3" : "#8ba0a6",
-                    fontWeight: p.isMe ? 700 : 400,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
-                  }}>
+                <div key={p.clerkId} className="flex items-center justify-between gap-1 py-0.5">
+                  <span
+                    className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px]"
+                    style={{ color: p.isMe ? "var(--foreground)" : "var(--foreground-muted)", fontWeight: p.isMe ? 700 : 400 }}
+                  >
                     {p.isMe ? "◆ " : ""}{p.displayName}
                   </span>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                  <span className="flex-shrink-0 font-mono text-[11px] font-bold" style={{ color, fontVariantNumeric: "tabular-nums" }}>
                     {p.totalScore}
                   </span>
                 </div>
@@ -314,7 +285,7 @@ function Scoreboard({ teams, myTeamId, formalTeams, timeLeft, matchStatus, winne
       </div>
 
       {formalTeams.length > 0 && (
-        <div style={{ marginTop: "8px", fontSize: "10px", color: "#4a6570", lineHeight: 1.5 }}>
+        <div className="mt-2 text-[10px] leading-relaxed text-foreground-subtle">
           Team raid tracked: formal team names, Social team record, and Past Raids all sync from the completed match.
         </div>
       )}
@@ -622,22 +593,19 @@ export default function LiveRaidClient({
   if (matchEnded) {
     const weWon     = winnerTeam === myTeamId;
     const isDraw    = matchStatus === "completed" && winnerTeam === null;
+    const resultColor = matchStatus === "abandoned"
+      ? "var(--foreground-subtle)"
+      : weWon ? RESULT_COLORS.win : isDraw ? RESULT_COLORS.draw : RESULT_COLORS.loss;
 
     return (
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: "28px",
-        background: "#0d1a1f", fontFamily: "'Segoe UI','Aptos','Trebuchet MS',sans-serif",
-        position: "relative",
-      }}>
-        <div style={{ fontSize: "52px" }}>
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-7 bg-background font-sans">
+        <div className="text-[52px]">
           {matchStatus === "abandoned" ? "🔌" : weWon ? "🏆" : isDraw ? "🤝" : "💀"}
         </div>
-        <h1 style={{
-          fontSize: "clamp(28px,5vw,52px)", fontWeight: 900,
-          color: matchStatus === "abandoned" ? "#8ba0a6" : weWon ? "#3ddc84" : isDraw ? "#f5b942" : "#ff5c5c",
-          letterSpacing: "-0.03em", margin: 0,
-        }}>
+        <h1
+          className="m-0 font-display font-black tracking-tight"
+          style={{ fontSize: "clamp(28px,5vw,52px)", color: resultColor }}
+        >
           {matchStatus === "abandoned" ? "Match Abandoned"
             : weWon ? "Your Team Wins!"
             : isDraw ? "It's a Draw"
@@ -645,57 +613,40 @@ export default function LiveRaidClient({
         </h1>
 
         {/* Team score card */}
-        <div style={{
-          display: "flex", gap: "32px", alignItems: "center",
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(201,214,218,0.1)",
-          borderRadius: "14px", padding: "22px 36px",
-        }}>
+        <div className="flex items-center gap-8 rounded-2xl border border-border bg-surface px-9 py-5.5">
           {orderedTeams.map((team, i) => {
             const color = TEAM_COLORS[team.teamId];
             const isWinner = winnerTeam === team.teamId;
             return (
-              <>
-                {i === 1 && <div style={{ fontSize: "20px", color: "#4a6570", fontWeight: 900 }}>VS</div>}
-                <div key={team.teamId} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "10px", fontWeight: 800, color, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "10px" }}>
+              <div key={team.teamId} className="flex items-center gap-8">
+                {i === 1 && <div className="text-xl font-black text-foreground-subtle">VS</div>}
+                <div className="text-center">
+                  <div className="mb-2.5 text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ color }}>
                     {getTeamLabel(team.teamId, orderedFormalTeams)}{isWinner ? " 🏆" : ""}{team.teamId === myTeamId ? " (You)" : ""}
                   </div>
-                  <div style={{ fontSize: "38px", fontWeight: 900, color: "#e8f0f3" }}>{team.totalScore}</div>
-                  <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <div className="text-[38px] font-black text-foreground">{team.totalScore}</div>
+                  <div className="mt-2 flex flex-col gap-0.5">
                     {team.players.map((p) => (
-                      <div key={p.clerkId} style={{ fontSize: "11px", color: "#8ba0a6" }}>
+                      <div key={p.clerkId} className="text-[11px] text-foreground-muted">
                         {p.displayName}: {p.totalScore} pts
                       </div>
                     ))}
                   </div>
                 </div>
-              </>
+              </div>
             );
           })}
         </div>
 
         {orderedFormalTeams.length > 0 && (
-          <div style={{
-            position: "absolute",
-            top: 20,
-            right: 20,
-            width: "min(340px, calc(100vw - 40px))",
-            padding: "10px 14px",
-            borderRadius: "10px",
-            border: "1px solid rgba(201,214,218,0.1)",
-            background: "rgba(255,255,255,0.03)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-          }}>
+          <div className="absolute right-5 top-5 flex flex-col gap-1.5 rounded-[10px] border border-border bg-surface p-3" style={{ width: "min(340px, calc(100vw - 40px))" }}>
             {orderedFormalTeams.map((formalTeam) => {
               const debugResult = getFormalTeamResult(formalTeam.teamSideId, winnerTeam);
-              const color = debugResult.delta > 0 ? "#3ddc84" : debugResult.delta < 0 ? "#ff5c5c" : "#f5b942";
+              const color = debugResult.delta > 0 ? RESULT_COLORS.win : debugResult.delta < 0 ? RESULT_COLORS.loss : RESULT_COLORS.draw;
               return (
-                <div key={`${formalTeam.sourceTeamId ?? "team"}-${formalTeam.teamSideId}`} style={{ fontSize: "12px", color: "#c9d6da" }}>
-                  Team: <span style={{ color: "#e8f0f3", fontWeight: 800 }}>{formalTeam.teamName}</span>
-                  {" "}Result: <span style={{ color, fontWeight: 800 }}>{debugResult.label}</span>
+                <div key={`${formalTeam.sourceTeamId ?? "team"}-${formalTeam.teamSideId}`} className="text-xs text-foreground-muted">
+                  Team: <span className="font-extrabold text-foreground">{formalTeam.teamName}</span>
+                  {" "}Result: <span className="font-extrabold" style={{ color }}>{debugResult.label}</span>
                   {" "}({debugResult.delta > 0 ? "+1" : debugResult.delta < 0 ? "-1" : "0"} in Social)
                 </div>
               );
@@ -703,25 +654,16 @@ export default function LiveRaidClient({
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="flex gap-3">
           <button
             onClick={() => { window.location.href = "/group-raid-page"; }}
-            style={{
-              background: "#f5b942", color: "#0d1a1f", border: "none",
-              padding: "12px 32px", borderRadius: "8px",
-              fontSize: "14px", fontWeight: 800, cursor: "pointer",
-            }}
+            className="cursor-pointer rounded-lg border-none bg-signal-performance px-8 py-3 text-sm font-extrabold text-background"
           >
             Raid Again →
           </button>
           <button
             onClick={() => { window.location.href = "/home"; }}
-            style={{
-              background: "transparent", color: "#8ba0a6",
-              border: "1px solid rgba(201,214,218,0.15)",
-              padding: "12px 24px", borderRadius: "8px",
-              fontSize: "14px", fontWeight: 600, cursor: "pointer",
-            }}
+            className="cursor-pointer rounded-lg border border-border-strong bg-transparent px-6 py-3 text-sm font-semibold text-foreground-muted"
           >
             Home
           </button>
@@ -734,65 +676,51 @@ export default function LiveRaidClient({
   // MAIN ARENA
   // ─────────────────────────────────────────────────────────────
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 
       {/* ── Top bar ─────────────────────────────────────────── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "12px",
-        padding: "0 18px", height: "48px", flexShrink: 0,
-        background: "#060c0f",
-        borderBottom: "1px solid rgba(201,214,218,0.08)",
-      }}>
+      <div className="flex h-12 flex-shrink-0 items-center gap-3 border-b border-border bg-background px-4.5">
         {/* Mode badge */}
-        <span style={{
-          fontSize: "10px", fontWeight: 800, color: "#f5b942",
-          background: "rgba(245,185,66,0.12)", border: "1px solid rgba(245,185,66,0.3)",
-          padding: "2px 10px", borderRadius: "999px", letterSpacing: "0.08em",
-        }}>
+        <span className="rounded-full border border-signal-performance/30 bg-signal-performance/[0.12] px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.08em] text-signal-performance">
           LIVE RAID
         </span>
 
         {/* Codebase */}
-        <span style={{ fontSize: "12.5px", fontWeight: 700, color: "#e8f0f3" }}>{codebaseName}</span>
-        <span style={{
-          fontSize: "10px", fontWeight: 700, color: "#f5b942",
-          background: "rgba(245,185,66,0.1)", border: "1px solid rgba(245,185,66,0.2)",
-          padding: "1px 7px", borderRadius: "999px",
-        }}>
+        <span className="text-[12.5px] font-bold text-foreground">{codebaseName}</span>
+        <span className="rounded-full border border-signal-performance/20 bg-signal-performance/10 px-1.5 py-px text-[10px] font-bold text-signal-performance">
           {files.length} FILES
         </span>
 
         {/* My score */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "8px" }}>
-          <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: TEAM_COLORS[myTeamId] }} />
-          <span style={{ fontSize: "11.5px", color: "#8ba0a6" }}>{myName}</span>
-          <span style={{ fontSize: "13px", fontWeight: 800, color: TEAM_COLORS[myTeamId], fontVariantNumeric: "tabular-nums" }}>
+        <div className="ml-2 flex items-center gap-1.5">
+          <div className="h-1.5 w-1.5 rounded-full" style={{ background: TEAM_COLORS[myTeamId] }} />
+          <span className="text-[11.5px] text-foreground-muted">{myName}</span>
+          <span className="text-[13px] font-extrabold" style={{ color: TEAM_COLORS[myTeamId], fontVariantNumeric: "tabular-nums" }}>
             {myTotalScore}pts
           </span>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
         {/* Progress bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "10.5px", color: "#4a6570" }}>{totalFixed}/{totalVulns}</span>
-          <div style={{ width: "120px", height: "4px", background: "rgba(201,214,218,0.07)", borderRadius: "2px", overflow: "hidden" }}>
-            <div style={{
-              height: "100%", width: `${pct}%`,
-              background: "linear-gradient(90deg, #f5b942, #3ddc84)",
-              borderRadius: "2px", transition: "width 0.4s ease",
-            }} />
+        <div className="flex items-center gap-2">
+          <span className="text-[10.5px] text-foreground-subtle">{totalFixed}/{totalVulns}</span>
+          <div className="h-1 w-[120px] overflow-hidden rounded-full bg-border">
+            <div
+              className="h-full rounded-full transition-[width] duration-[400ms] ease-out"
+              style={{ width: `${pct}%`, background: "linear-gradient(90deg, var(--signal-performance), var(--signal-scalability))" }}
+            />
           </div>
-          <span style={{ fontSize: "10.5px", color: "#8ba0a6" }}>{pct}%</span>
+          <span className="text-[10.5px] text-foreground-muted">{pct}%</span>
         </div>
 
         {/* Timer */}
-        <div style={{ display: "flex", alignItems: "center", gap: "5px", marginLeft: "4px" }}>
-          <span style={{ fontSize: "11px", color: "#4a6570" }}>⏱</span>
-          <span style={{
-            fontSize: "14px", fontWeight: 900, fontVariantNumeric: "tabular-nums",
-            color: timeLeft !== null && timeLeft <= 10 ? "#ff5c5c" : "#f5b942",
-          }}>
+        <div className="ml-1 flex items-center gap-1.5">
+          <span className="text-[11px] text-foreground-subtle">⏱</span>
+          <span
+            className="font-mono text-sm font-black"
+            style={{ fontVariantNumeric: "tabular-nums", color: timeLeft !== null && timeLeft <= 10 ? "var(--signal-security)" : "var(--signal-performance)" }}
+          >
             {timeLeft !== null ? formatTime(timeLeft) : "—"}
           </span>
         </div>
@@ -802,110 +730,68 @@ export default function LiveRaidClient({
           <button
             onClick={() => setSurrenderConfirm(true)}
             disabled={matchEnded}
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(255,92,92,0.35)",
-              color: "#ff5c5c",
-              padding: "3px 11px",
-              borderRadius: "5px",
-              fontSize: "11px",
-              fontWeight: 700,
-              cursor: matchEnded ? "not-allowed" : "pointer",
-              opacity: matchEnded ? 0.4 : 1,
-            }}
+            className="rounded-md border border-signal-security/35 bg-transparent px-2.5 py-[3px] text-[11px] font-bold text-signal-security"
+            style={{ cursor: matchEnded ? "not-allowed" : "pointer", opacity: matchEnded ? 0.4 : 1 }}
           >
             Surrender
           </button>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "10.5px", color: "#ff5c5c", fontWeight: 700 }}>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10.5px] font-bold text-signal-security">
               Your team loses. Sure?
             </span>
             <button
               onClick={handleSurrender}
               disabled={surrendering}
-              style={{
-                background: "#ff5c5c",
-                border: "none",
-                color: "#0d1a1f",
-                padding: "3px 10px",
-                borderRadius: "5px",
-                fontSize: "11px",
-                fontWeight: 800,
-                cursor: surrendering ? "not-allowed" : "pointer",
-              }}
+              className="rounded-md border-none bg-signal-security px-2.5 py-[3px] text-[11px] font-extrabold text-background"
+              style={{ cursor: surrendering ? "not-allowed" : "pointer" }}
             >
               {surrendering ? "…" : "Yes"}
             </button>
             <button
               onClick={() => setSurrenderConfirm(false)}
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(201,214,218,0.15)",
-                color: "#8ba0a6",
-                padding: "3px 10px",
-                borderRadius: "5px",
-                fontSize: "11px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              className="cursor-pointer rounded-md border border-border-strong bg-transparent px-2.5 py-[3px] text-[11px] font-semibold text-foreground-muted"
             >
               No
             </button>
           </div>
         )}
 
-        <span style={{ fontSize: "10px", color: "#2a3a40" }}>#{matchId}</span>
+        <span className="font-mono text-[10px] text-foreground-subtle">#{matchId}</span>
       </div>
 
       {/* ── Three-column layout ──────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden" }}>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
 
         {/* Left: File tree */}
-        <div style={{
-          width: "240px", flexShrink: 0, background: "#060c0f",
-          borderRight: "1px solid rgba(201,214,218,0.07)",
-          display: "flex", flexDirection: "column", overflow: "hidden",
-        }}>
-          <div style={{
-            padding: "9px 13px 7px",
-            borderBottom: "1px solid rgba(201,214,218,0.06)",
-            flexShrink: 0, display: "flex", alignItems: "center", gap: "6px",
-          }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#4a6570", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+        <div className="flex w-[240px] flex-shrink-0 flex-col overflow-hidden border-r border-border bg-background">
+          <div className="flex flex-shrink-0 items-center gap-1.5 border-b border-border px-3.5 pb-1.5 pt-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-foreground-subtle">
               Explorer
             </span>
-            <span style={{ fontSize: "10px", color: "#4a6570", marginLeft: "auto" }}>{files.length} files</span>
+            <span className="ml-auto text-[10px] text-foreground-subtle">{files.length} files</span>
           </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "5px 0" }}>
+          <div className="flex-1 overflow-y-auto py-1.5">
             <FolderBranch node={fileTree} selectedPath={selectedPath} onSelect={handleFileSelect} progress={progress} />
           </div>
         </div>
 
         {/* Center: Ace Editor */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, background: "#1e1e1e" }}>
-          <div style={{
-            padding: "5px 14px", background: "#0d1117",
-            borderBottom: "1px solid rgba(201,214,218,0.07)",
-            display: "flex", alignItems: "center", gap: "10px", flexShrink: 0,
-          }}>
-            <span style={{ fontSize: "13px" }}>📄</span>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#e8f0f3", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#1e1e1e]">
+          <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border bg-background px-3.5 py-1.5">
+            <span className="text-[13px]">📄</span>
+            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold text-foreground">
               {selectedPath ?? "No file selected"}
             </span>
-            <span style={{
-              fontSize: "10px", fontWeight: 700, color: "#22d3ee",
-              background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)",
-              padding: "2px 7px", borderRadius: "4px", flexShrink: 0,
-            }}>
+            <span className="flex-shrink-0 rounded border border-signal-ethics/20 bg-signal-ethics/10 px-1.5 py-0.5 text-[10px] font-bold text-signal-ethics">
               C++
             </span>
-            <span style={{ fontSize: "10.5px", color: "#4a6570", flexShrink: 0 }}>
+            <span className="flex-shrink-0 text-[10.5px] text-foreground-subtle">
               {fileCatsDone}/5 done · {fileScore} pts
             </span>
           </div>
 
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div className="min-h-0 flex-1">
             {selectedPath ? (
               <AceEditor
                 key={selectedPath}
@@ -922,7 +808,7 @@ export default function LiveRaidClient({
                 style={{ lineHeight: "1.7" }}
               />
             ) : (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#4a6570", fontSize: "14px" }}>
+              <div className="flex h-full items-center justify-center text-sm text-foreground-subtle">
                 Select a file from the explorer
               </div>
             )}
@@ -930,11 +816,7 @@ export default function LiveRaidClient({
         </div>
 
         {/* Right: Scoreboard + Vulnerability hunter */}
-        <div style={{
-          width: "360px", flexShrink: 0, background: "#0a1419",
-          borderLeft: "1px solid rgba(201,214,218,0.07)",
-          display: "flex", flexDirection: "column", overflow: "hidden",
-        }}>
+        <div className="flex w-[360px] flex-shrink-0 flex-col overflow-hidden border-l border-border bg-background">
           {/* Live scoreboard */}
           <Scoreboard
             teams={orderedTeams}
@@ -946,19 +828,17 @@ export default function LiveRaidClient({
           />
 
           {/* Vulnerability hunter header */}
-          <div style={{
-            padding: "9px 14px", borderBottom: "1px solid rgba(201,214,218,0.07)", flexShrink: 0,
-          }}>
-            <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#e8f0f3" }}>Vulnerability Hunter</div>
-            <div style={{ fontSize: "10.5px", color: "#4a6570", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="flex-shrink-0 border-b border-border px-3.5 py-2.5">
+            <div className="text-[11.5px] font-bold text-foreground">Vulnerability Hunter</div>
+            <div className="mt-px overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] text-foreground-subtle">
               {selectedPath ? selectedPath.split("/").pop() : "Select a file to begin"}
             </div>
           </div>
 
           {/* Category accordion */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div className="flex-1 overflow-y-auto">
             {!selectedFile ? (
-              <div style={{ padding: "36px 18px", textAlign: "center", color: "#4a6570", fontSize: "12.5px" }}>
+              <div className="px-4.5 py-9 text-center text-[12.5px] text-foreground-subtle">
                 Select a file from the explorer to see its vulnerabilities.
               </div>
             ) : (
@@ -983,24 +863,15 @@ export default function LiveRaidClient({
 
           {/* File score footer */}
           {lastCheck?.error ? (
-            <div style={{
-              padding: "9px 14px", flexShrink: 0,
-              background: "rgba(245,90,90,0.07)",
-              borderTop: "1px solid rgba(245,90,90,0.18)",
-              fontSize: "11px", color: "#ff8080",
-            }}>
+            <div className="flex-shrink-0 border-t border-signal-security/20 bg-signal-security/[0.07] px-3.5 py-2.5 text-[11px] text-[#ff8080]">
               ✗ {lastCheck.error}
             </div>
           ) : (
-            <div style={{
-              padding: "10px 14px", flexShrink: 0,
-              borderTop: "1px solid rgba(201,214,218,0.07)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <span style={{ fontSize: "10.5px", color: "#4a6570" }}>
+            <div className="flex flex-shrink-0 items-center justify-between border-t border-border px-3.5 py-2.5">
+              <span className="text-[10.5px] text-foreground-subtle">
                 {selectedPath?.split("/").pop() ?? "File"} score
               </span>
-              <span style={{ fontSize: "13px", fontWeight: 800, color: "#f5b942" }}>
+              <span className="text-[13px] font-extrabold text-signal-performance">
                 {fileScore} pts
               </span>
             </div>

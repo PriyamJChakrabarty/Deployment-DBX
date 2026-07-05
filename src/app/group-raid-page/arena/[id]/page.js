@@ -48,12 +48,7 @@ export default async function RaidArenaPage({ params, searchParams }) {
     : [];
 
   return (
-    <div style={{
-      height: "100vh", display: "flex", flexDirection: "column",
-      background: "#0d1a1f", color: "#c9d6da",
-      fontFamily: "'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif",
-      overflow: "hidden",
-    }}>
+    <div className="flex h-screen flex-col overflow-hidden bg-background font-sans text-foreground">
       <HeartbeatClient />
       <LiveRaidClient
         matchId={matchId}

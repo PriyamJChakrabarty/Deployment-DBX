@@ -42,7 +42,7 @@ export default async function TeamRaidLobbyPage({ params }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0d1a1f" }}>
+    <div className="flex h-screen flex-col bg-background">
       <HeartbeatClient />
       <SiteNav active="" />
       <LobbyClient

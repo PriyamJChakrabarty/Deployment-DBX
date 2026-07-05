@@ -1,24 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CATEGORY_COLORS, COLORS, RESULT_COLORS } from "@/lib/theme";
 
-const C = {
-  bg:     "#0d1a1f",
-  panel:  "#0a1419",
-  card:   "#0e191f",
-  border: "rgba(201,214,218,0.07)",
-  green:  "#3ddc84",
-  gold:   "#f5b942",
-  cyan:   "#22d3ee",
-  red:    "#ef4444",
-  text:   "#e8f0f3",
-  sub:    "#8ba0a6",
-  muted:  "#4a6570",
-};
+// Accent hues reused from the category signal palette (hue-matched, not
+// semantically tied to bug categories here — same convention as
+// TEAM_COLORS in home-client.js).
+const GREEN = CATEGORY_COLORS.Scalability;  // #2dd881
+const GOLD  = CATEGORY_COLORS.Performance;  // #ffb020
+const CYAN  = CATEGORY_COLORS.Ethics;       // #22d3ee
+const RED   = CATEGORY_COLORS.Security;     // #ff3b5c
 
 const ROLE_RANK  = { captain: 0, vice_captain: 1, member: 2 };
 const ROLE_LABEL = { captain: "Captain", vice_captain: "Vice Captain", member: "Member" };
-const ROLE_COLOR = { captain: C.gold, vice_captain: C.cyan, member: C.sub };
+const ROLE_COLOR = { captain: GOLD, vice_captain: CYAN, member: COLORS.foregroundMuted };
 const ROLE_ICON  = { captain: "👑", vice_captain: "🥈", member: "🎮" };
 
 const EMOJIS = ["🛡️","⚔️","🔥","💀","🏆","👑","🐉","⚡","🌪️","🎯","🦅","🐺","🦁","🔱","🌟","💎","🚀","🧠","🤖","🎮"];
@@ -27,8 +22,8 @@ const SIZE_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 10];
 
 const KEYFRAMES = `
 @keyframes raid-glow {
-  0%, 100% { box-shadow: 0 0 18px rgba(245,185,66,0.35), 0 0 0px rgba(245,185,66,0); }
-  50%      { box-shadow: 0 0 40px rgba(245,185,66,0.65), 0 0 70px rgba(245,185,66,0.25); }
+  0%, 100% { box-shadow: 0 0 18px color-mix(in oklab, var(--signal-performance) 35%, transparent), 0 0 0px transparent; }
+  50%      { box-shadow: 0 0 40px color-mix(in oklab, var(--signal-performance) 65%, transparent), 0 0 70px color-mix(in oklab, var(--signal-performance) 25%, transparent); }
 }
 @keyframes raid-shimmer {
   0%   { background-position: -200% 0; }
@@ -67,6 +62,13 @@ async function apiFetch(url, opts = {}) {
 
 // ── Sub-components ─────────────────────────────────────────────
 
+const ACTION_BTN_BASE = "cursor-pointer rounded-md border bg-transparent px-3 py-1 text-[11px] font-bold transition-colors";
+const ACTION_BTN_CLASS = {
+  promote: `${ACTION_BTN_BASE} border-signal-scalability/40 text-signal-scalability hover:bg-signal-scalability/10`,
+  demote:  `${ACTION_BTN_BASE} border-signal-performance/40 text-signal-performance hover:bg-signal-performance/10`,
+  kick:    `${ACTION_BTN_BASE} border-signal-security/40 text-signal-security hover:bg-signal-security/10`,
+};
+
 function MemberRow({ member, myClerkId, myRole, teamId, onRefresh }) {
   const isMe = member.clerkId === myClerkId;
   const [loading, setLoading] = useState(false);
@@ -90,66 +92,57 @@ function MemberRow({ member, myClerkId, myRole, teamId, onRefresh }) {
   const showDemote  = !isMe && canDemote(myRole, member.role);
   const showKick    = !isMe && canKick(myRole, member.role);
 
+  const roleColor = ROLE_COLOR[member.role];
+
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "12px 16px", borderRadius: 10,
-      background: C.card, border: `1px solid ${C.border}`,
-      marginBottom: 6,
-    }}>
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${ROLE_COLOR[member.role]}2c, ${ROLE_COLOR[member.role]}08)`,
-          border: `1.5px solid ${ROLE_COLOR[member.role]}55`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 16, fontWeight: 700, color: ROLE_COLOR[member.role],
-        }}>
+    <div className="mb-1.5 flex items-center gap-3 rounded-[10px] border border-border bg-surface-2 px-4 py-3">
+      <div className="relative flex-shrink-0">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-full text-base font-bold"
+          style={{
+            background: `linear-gradient(135deg, ${roleColor}2c, ${roleColor}08)`,
+            border: `1.5px solid ${roleColor}55`,
+            color: roleColor,
+          }}
+        >
           {(member.displayName || "?")[0].toUpperCase()}
         </div>
-        <div style={{
-          position: "absolute", bottom: -3, right: -4, fontSize: 13,
-          background: C.bg, borderRadius: "50%", lineHeight: 1, padding: 1.5,
-          border: `1px solid ${C.border}`,
-        }}>
+        <div className="absolute -bottom-[3px] -right-1 rounded-full border border-border bg-background p-[1.5px] text-[13px] leading-none">
           {ROLE_ICON[member.role]}
         </div>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold text-foreground">
             {member.displayName}{isMe ? " (you)" : ""}
           </span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-            textTransform: "uppercase", color: ROLE_COLOR[member.role],
-            background: `${ROLE_COLOR[member.role]}14`,
-            border: `1px solid ${ROLE_COLOR[member.role]}30`,
-            borderRadius: 99, padding: "1px 8px", flexShrink: 0,
-          }}>
+          <span
+            className="flex-shrink-0 rounded-full border px-2 py-px text-[10px] font-bold uppercase tracking-[0.08em]"
+            style={{ color: roleColor, background: `${roleColor}14`, borderColor: `${roleColor}30` }}
+          >
             {ROLE_LABEL[member.role]}
           </span>
         </div>
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+        <div className="mt-0.5 text-[11px] text-foreground-subtle">
           🕐 Joined {timeAgo(member.joinedAt)}
         </div>
       </div>
 
       {(showPromote || showDemote || showKick) && (
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <div className="flex flex-shrink-0 gap-1.5">
           {showPromote && (
-            <button onClick={() => act("promote")} disabled={loading} style={actionBtn(C.green)}>
+            <button onClick={() => act("promote")} disabled={loading} className={ACTION_BTN_CLASS.promote}>
               ↑ Promote
             </button>
           )}
           {showDemote && (
-            <button onClick={() => act("demote")} disabled={loading} style={actionBtn(C.gold)}>
+            <button onClick={() => act("demote")} disabled={loading} className={ACTION_BTN_CLASS.demote}>
               ↓ Demote
             </button>
           )}
           {showKick && (
-            <button onClick={() => act("kick")} disabled={loading} style={actionBtn(C.red)}>
+            <button onClick={() => act("kick")} disabled={loading} className={ACTION_BTN_CLASS.kick}>
               Kick
             </button>
           )}
@@ -157,15 +150,6 @@ function MemberRow({ member, myClerkId, myRole, teamId, onRefresh }) {
       )}
     </div>
   );
-}
-
-function actionBtn(color) {
-  return {
-    fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6,
-    cursor: "pointer", background: "transparent",
-    color, border: `1px solid ${color}44`,
-    transition: "background 0.15s",
-  };
 }
 
 function TeamChat({ teamId, myClerkId }) {
@@ -212,31 +196,31 @@ function TeamChat({ teamId, myClerkId }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+    <div className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
         {messages.length === 0 && (
-          <p style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 48 }}>
+          <p className="mt-12 text-center text-[13px] text-foreground-subtle">
             No messages yet. Say something!
           </p>
         )}
         {messages.map((msg) => {
           const isMine = msg.senderClerkId === myClerkId;
           return (
-            <div key={msg.id} style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start" }}>
+            <div key={msg.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
               {!isMine && (
-                <span style={{ fontSize: 10, color: C.muted, marginBottom: 3, marginLeft: 4 }}>{msg.senderName}</span>
+                <span className="mb-[3px] ml-1 text-[10px] text-foreground-subtle">{msg.senderName}</span>
               )}
-              <div style={{
-                maxWidth: "70%",
-                background: isMine ? "rgba(61,220,132,0.1)" : "rgba(201,214,218,0.05)",
-                border: `1px solid ${isMine ? "rgba(61,220,132,0.25)" : "rgba(201,214,218,0.1)"}`,
-                borderRadius: isMine ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
-                padding: "9px 13px",
-              }}>
-                <p style={{ margin: 0, fontSize: 13.5, color: C.text, lineHeight: 1.5, wordBreak: "break-word" }}>
+              <div
+                className={`max-w-[70%] rounded-[14px] border px-[13px] py-[9px] ${
+                  isMine
+                    ? "rounded-br-[3px] border-signal-scalability/25 bg-signal-scalability/10"
+                    : "rounded-bl-[3px] border-border bg-foreground/5"
+                }`}
+              >
+                <p className="m-0 break-words text-[13.5px] leading-relaxed text-foreground">
                   {msg.content}
                 </p>
-                <p style={{ margin: "4px 0 0", fontSize: 10, color: C.muted, textAlign: isMine ? "right" : "left" }}>
+                <p className={`mt-1 mb-0 text-[10px] text-foreground-subtle ${isMine ? "text-right" : "text-left"}`}>
                   {timeAgo(msg.createdAt)}
                 </p>
               </div>
@@ -246,31 +230,20 @@ function TeamChat({ teamId, myClerkId }) {
         <div ref={endRef} />
       </div>
 
-      <div style={{
-        padding: "12px 16px", borderTop: `1px solid ${C.border}`,
-        display: "flex", gap: 8, flexShrink: 0,
-      }}>
+      <div className="flex flex-shrink-0 gap-2 border-t border-border px-4 py-3">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
           placeholder="Message your team…"
-          style={{
-            flex: 1, background: "rgba(201,214,218,0.05)",
-            border: `1px solid ${C.border}`, borderRadius: 8,
-            color: C.text, padding: "9px 14px", fontSize: 13, outline: "none",
-          }}
+          className="flex-1 rounded-lg border border-border bg-foreground/5 px-3.5 py-2.5 text-[13px] text-foreground outline-none"
         />
         <button
           onClick={send}
           disabled={!input.trim() || sending}
-          style={{
-            background: C.green, color: "#0d1a1f",
-            border: "none", borderRadius: 8,
-            padding: "9px 18px", fontSize: 13, fontWeight: 700,
-            cursor: input.trim() && !sending ? "pointer" : "default",
-            opacity: input.trim() && !sending ? 1 : 0.4,
-          }}
+          className={`rounded-lg border-none bg-signal-scalability px-4.5 py-2.5 text-[13px] font-bold text-background ${
+            input.trim() && !sending ? "cursor-pointer opacity-100" : "cursor-default opacity-40"
+          }`}
         >
           Send
         </button>
@@ -301,51 +274,41 @@ function ChallengeTeamsTab({ myTeamId }) {
 
   const others = teams.filter((t) => t.id !== myTeamId);
 
-  if (loading) return <p style={{ color: C.muted, textAlign: "center", padding: 48, fontSize: 13 }}>Loading…</p>;
+  if (loading) return <p className="p-12 text-center text-[13px] text-foreground-subtle">Loading…</p>;
 
   if (others.length === 0) return (
-    <div style={{ textAlign: "center", padding: "64px 0" }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>🏆</div>
-      <div style={{ color: C.muted, fontSize: 14 }}>No other teams to challenge yet.</div>
+    <div className="py-16 text-center">
+      <div className="mb-4 text-4xl">🏆</div>
+      <div className="text-sm text-foreground-subtle">No other teams to challenge yet.</div>
     </div>
   );
 
   return (
-    <div style={{ padding: "16px 20px", overflowY: "auto", height: "100%" }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14 }}>
+    <div className="h-full overflow-y-auto px-5 py-4">
+      <div className="mb-3.5 text-[11px] font-bold uppercase tracking-[0.08em] text-foreground-subtle">
         Select a team to challenge
       </div>
       {others.map((team) => (
-        <div key={team.id} style={{
-          display: "flex", alignItems: "center", gap: 14,
-          padding: "14px 16px", borderRadius: 12,
-          background: C.card, border: `1px solid ${C.border}`,
-          marginBottom: 8, transition: "border-color 0.15s",
-        }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,185,66,0.25)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; }}
+        <div
+          key={team.id}
+          className="mb-2 flex items-center gap-3.5 rounded-xl border border-border bg-surface-2 px-4 py-3.5 transition-colors hover:border-signal-performance/25"
         >
-          <div style={{ fontSize: 34, flexShrink: 0 }}>{team.emoji}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 3 }}>{team.name}</div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <span style={{ fontSize: 11, color: C.muted }}>{team.memberCount} / {team.size} members</span>
-              <span style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>{team.wins}W – {team.losses}L</span>
+          <div className="flex-shrink-0 text-[34px]">{team.emoji}</div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-[3px] text-sm font-extrabold text-foreground">{team.name}</div>
+            <div className="flex gap-3">
+              <span className="text-[11px] text-foreground-subtle">{team.memberCount} / {team.size} members</span>
+              <span className="text-[11px] font-bold text-signal-scalability">{team.wins}W – {team.losses}L</span>
             </div>
           </div>
           <button
             onClick={() => handleChallenge(team)}
             disabled={challenging === team.id}
-            style={{
-              background: challenging === team.id ? "transparent" : C.gold,
-              color: challenging === team.id ? C.gold : "#0d1a1f",
-              border: `1px solid ${C.gold}`,
-              borderRadius: 8, padding: "7px 18px",
-              fontSize: 12, fontWeight: 800,
-              cursor: challenging === team.id ? "default" : "pointer",
-              opacity: challenging === team.id ? 0.6 : 1,
-              flexShrink: 0, letterSpacing: "0.04em",
-            }}
+            className={`flex-shrink-0 rounded-lg border border-signal-performance px-4.5 py-[7px] text-xs font-extrabold tracking-[0.04em] ${
+              challenging === team.id
+                ? "cursor-default bg-transparent text-signal-performance opacity-60"
+                : "cursor-pointer bg-signal-performance text-background"
+            }`}
           >
             {challenging === team.id ? "Sending…" : "⚔ Challenge"}
           </button>
@@ -381,50 +344,45 @@ function PastRaids({ teamId }) {
   }, [teamId]);
 
   const RESULT = {
-    win:  { label: "WIN",  color: C.green, bg: "rgba(61,220,132,0.08)"  },
-    loss: { label: "LOSS", color: C.red,   bg: "rgba(239,68,68,0.08)"   },
-    draw: { label: "DRAW", color: C.gold,  bg: "rgba(245,185,66,0.08)"  },
+    win:  { label: "WIN",  color: RESULT_COLORS.win  },
+    loss: { label: "LOSS", color: RESULT_COLORS.loss },
+    draw: { label: "DRAW", color: RESULT_COLORS.draw },
   };
 
-  if (loading) return <p style={{ color: C.muted, textAlign: "center", padding: 48, fontSize: 13 }}>Loading…</p>;
+  if (loading) return <p className="p-12 text-center text-[13px] text-foreground-subtle">Loading…</p>;
   if (raids.length === 0) return (
-    <p style={{ color: C.muted, textAlign: "center", padding: 48, fontSize: 13 }}>
+    <p className="p-12 text-center text-[13px] text-foreground-subtle">
       No completed raids yet. Start one from the Home page!
     </p>
   );
 
   return (
-    <div style={{ padding: "16px 20px", overflowY: "auto", height: "100%" }}>
+    <div className="h-full overflow-y-auto px-5 py-4">
       {raids.map((raid) => {
         const r = RESULT[raid.result] ?? RESULT.draw;
         return (
-          <div key={raid.matchId} style={{
-            display: "flex", alignItems: "center", gap: 14,
-            padding: "12px 16px", borderRadius: 10,
-            background: r.bg, border: `1px solid ${r.color}22`,
-            marginBottom: 8,
-          }}>
-            <div style={{
-              width: 48, textAlign: "center",
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.08em",
-              color: r.color,
-            }}>
+          <div
+            key={raid.matchId}
+            className="mb-2 flex items-center gap-3.5 rounded-[10px] border px-4 py-3"
+            style={{ background: `${r.color}14`, borderColor: `${r.color}22` }}
+          >
+            <div className="w-12 text-center text-[11px] font-extrabold tracking-[0.08em]" style={{ color: r.color }}>
               {r.label}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+            <div className="flex-1">
+              <div className="text-[13px] font-semibold text-foreground">
                 Group Raid #{raid.matchId}
               </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+              <div className="mt-0.5 text-[11px] text-foreground-subtle">
                 {timeAgo(raid.endedAt)}
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: r.color }}>
-                {raid.myScore} <span style={{ color: C.muted, fontWeight: 400 }}>pts</span>
+            <div className="text-right">
+              <div className="text-sm font-extrabold" style={{ color: r.color }}>
+                {raid.myScore} <span className="font-normal text-foreground-subtle">pts</span>
               </div>
-              <div style={{ fontSize: 11, color: C.muted }}>vs {raid.oppScore}</div>
-              <div style={{ fontSize: 10, color: r.color, fontWeight: 700, marginTop: 3 }}>
+              <div className="text-[11px] text-foreground-subtle">vs {raid.oppScore}</div>
+              <div className="mt-[3px] text-[10px] font-bold" style={{ color: r.color }}>
                 Team record: +1 {raid.result === "win" ? "win" : raid.result === "loss" ? "loss" : "draw"}
               </div>
             </div>
@@ -457,71 +415,56 @@ function CreateTeamForm({ onCreated }) {
   }
 
   return (
-    <form onSubmit={submit} style={{
-      background: C.panel, borderRight: `1px solid ${C.border}`,
-      width: "320px", flexShrink: 0, padding: "28px 24px",
-      display: "flex", flexDirection: "column", gap: 20, overflowY: "auto",
-    }}>
+    <form onSubmit={submit} className="flex w-[320px] flex-shrink-0 flex-col gap-5 overflow-y-auto border-r border-border bg-surface px-6 py-7">
       <div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4 }}>🛡️ Create a Team</div>
-        <div style={{ fontSize: 12, color: C.muted }}>Form your squad and invite players to raid together.</div>
+        <div className="mb-1 text-base font-extrabold text-foreground">🛡️ Create a Team</div>
+        <div className="text-xs text-foreground-subtle">Form your squad and invite players to raid together.</div>
       </div>
 
       {/* Emoji picker */}
       <div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 10 }}>
+        <label className="mb-2.5 block text-[11px] font-bold uppercase tracking-[0.06em] text-foreground-muted">
           Team Logo (Emoji)
         </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="flex flex-wrap gap-1.5">
           {EMOJIS.map((e) => (
             <button
               key={e} type="button" onClick={() => setEmoji(e)}
-              style={{
-                width: 38, height: 38, borderRadius: 8, fontSize: 20, cursor: "pointer",
-                border: `1.5px solid ${emoji === e ? C.green : C.border}`,
-                background: emoji === e ? "rgba(61,220,132,0.1)" : "rgba(201,214,218,0.03)",
-              }}
+              className={`h-[38px] w-[38px] rounded-lg border-[1.5px] text-xl ${
+                emoji === e ? "border-signal-scalability bg-signal-scalability/10" : "border-border bg-foreground/[0.03]"
+              }`}
             >
               {e}
             </button>
           ))}
         </div>
-        <div style={{ marginTop: 12, fontSize: 32, textAlign: "center" }}>{emoji}</div>
+        <div className="mt-3 text-center text-[32px]">{emoji}</div>
       </div>
 
       {/* Name */}
       <div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.06em] text-foreground-muted">
           Team Name
         </label>
         <input
           value={name} onChange={(e) => setName(e.target.value)}
           maxLength={32} placeholder="e.g. Null Terminators"
-          style={{
-            width: "100%", boxSizing: "border-box",
-            background: "rgba(201,214,218,0.04)", border: `1px solid ${C.border}`,
-            borderRadius: 8, color: C.text, padding: "10px 14px",
-            fontSize: 13, outline: "none",
-          }}
+          className="box-border w-full rounded-lg border border-border bg-foreground/[0.04] px-3.5 py-2.5 text-[13px] text-foreground outline-none"
         />
       </div>
 
       {/* Size */}
       <div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.06em] text-foreground-muted">
           Max Members
         </label>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div className="flex flex-wrap gap-1.5">
           {SIZE_OPTIONS.map((n) => (
             <button
               key={n} type="button" onClick={() => setSize(n)}
-              style={{
-                padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700,
-                cursor: "pointer",
-                background: size === n ? C.green : "transparent",
-                color: size === n ? "#0d1a1f" : C.sub,
-                border: `1px solid ${size === n ? C.green : C.border}`,
-              }}
+              className={`rounded-lg border px-3.5 py-1.5 text-[13px] font-bold ${
+                size === n ? "border-signal-scalability bg-signal-scalability text-background" : "border-border bg-transparent text-foreground-muted"
+              }`}
             >
               {n}
             </button>
@@ -531,12 +474,9 @@ function CreateTeamForm({ onCreated }) {
 
       <button
         type="submit" disabled={!name.trim() || loading}
-        style={{
-          background: C.green, color: "#0d1a1f", border: "none",
-          borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 800,
-          cursor: name.trim() && !loading ? "pointer" : "default",
-          opacity: name.trim() && !loading ? 1 : 0.5,
-        }}
+        className={`rounded-[10px] border-none bg-signal-scalability py-3 text-sm font-extrabold text-background ${
+          name.trim() && !loading ? "cursor-pointer opacity-100" : "cursor-default opacity-50"
+        }`}
       >
         {loading ? "Creating…" : "Create Team →"}
       </button>
@@ -563,34 +503,29 @@ function OpenTeamsList({ onJoined }) {
   }
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.sub, marginBottom: 20, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+    <div className="flex-1 overflow-y-auto px-7 py-6">
+      <div className="mb-5 text-[13px] font-bold uppercase tracking-[0.04em] text-foreground-muted">
         🌐 Open Teams
       </div>
 
-      {loading && <p style={{ color: C.muted, fontSize: 13 }}>Loading…</p>}
+      {loading && <p className="text-[13px] text-foreground-subtle">Loading…</p>}
       {!loading && teams.length === 0 && (
-        <div style={{ textAlign: "center", padding: "64px 0" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🛡️</div>
-          <div style={{ color: C.muted, fontSize: 14 }}>No open teams yet. Be the first to create one!</div>
+        <div className="py-16 text-center">
+          <div className="mb-4 text-4xl">🛡️</div>
+          <div className="text-sm text-foreground-subtle">No open teams yet. Be the first to create one!</div>
         </div>
       )}
 
       {teams.map((team) => (
-        <div key={team.id} style={{
-          display: "flex", alignItems: "center", gap: 16,
-          padding: "16px 18px", borderRadius: 12,
-          background: C.card, border: `1px solid ${C.border}`,
-          marginBottom: 10,
-        }}>
-          <div style={{ fontSize: 36, flexShrink: 0 }}>{team.emoji}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 4 }}>{team.name}</div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <span style={{ fontSize: 11, color: C.muted }}>
+        <div key={team.id} className="mb-2.5 flex items-center gap-4 rounded-xl border border-border bg-surface-2 px-4.5 py-4">
+          <div className="flex-shrink-0 text-4xl">{team.emoji}</div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 text-sm font-extrabold text-foreground">{team.name}</div>
+            <div className="flex gap-3">
+              <span className="text-[11px] text-foreground-subtle">
                 {team.memberCount} / {team.size} members
               </span>
-              <span style={{ fontSize: 11, color: C.green }}>
+              <span className="text-[11px] text-signal-scalability">
                 {team.wins}W – {team.losses}L
               </span>
             </div>
@@ -598,13 +533,9 @@ function OpenTeamsList({ onJoined }) {
           <button
             onClick={() => join(team)}
             disabled={joining === team.id}
-            style={{
-              background: C.green, color: "#0d1a1f",
-              border: "none", borderRadius: 8,
-              padding: "8px 20px", fontSize: 13, fontWeight: 700,
-              cursor: joining === team.id ? "default" : "pointer",
-              opacity: joining === team.id ? 0.6 : 1, flexShrink: 0,
-            }}
+            className={`flex-shrink-0 rounded-lg border-none bg-signal-scalability px-5 py-2 text-[13px] font-bold text-background ${
+              joining === team.id ? "cursor-default opacity-60" : "cursor-pointer opacity-100"
+            }`}
           >
             {joining === team.id ? "Joining…" : "Join"}
           </button>
@@ -618,14 +549,14 @@ function OpenTeamsList({ onJoined }) {
 
 function StatItem({ icon, value, label, color }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 14 }}>
-      <div style={{ textAlign: "right" }}>
-        <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1.15 }}>{value}</div>
-        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" }}>
+    <div className="flex items-center justify-end gap-3.5">
+      <div className="text-right">
+        <div className="text-[26px] font-black leading-[1.15]" style={{ color }}>{value}</div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.07em] text-foreground-subtle">
           {label}
         </div>
       </div>
-      <div style={{ fontSize: 28, flexShrink: 0 }}>{icon}</div>
+      <div className="flex-shrink-0 text-[28px]">{icon}</div>
     </div>
   );
 }
@@ -657,137 +588,99 @@ function InTeamView({ team, myClerkId, onRefresh, onLeave }) {
     } catch (e) { alert(e.message); setRaiding(false); }
   }
 
+  const roleColor = ROLE_COLOR[team.myRole];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", overflow: "hidden" }}>
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <style>{KEYFRAMES}</style>
 
       {/* Team header */}
-      <div style={{
-        position: "relative",
-        padding: "22px 28px 0",
-        borderBottom: `1px solid ${C.border}`,
-        background: `linear-gradient(180deg, rgba(245,185,66,0.05), ${C.panel} 70%)`,
-        flexShrink: 0,
-      }}>
+      <div
+        className="relative flex-shrink-0 border-b border-border px-7 pt-[22px]"
+        style={{ background: "linear-gradient(180deg, color-mix(in oklab, var(--signal-performance) 5%, transparent), var(--surface) 70%)" }}
+      >
         <button
           onClick={onLeave}
-          style={{
-            position: "absolute", top: 20, left: 28,
-            display: "flex", alignItems: "center", gap: 7,
-            background: "rgba(239,68,68,0.08)", color: C.red,
-            border: `1px solid rgba(239,68,68,0.35)`, borderRadius: 8,
-            padding: "8px 16px 8px 14px", fontSize: 12, fontWeight: 700,
-            letterSpacing: "0.02em", cursor: "pointer",
-            transition: "background 0.15s, border-color 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.18)";
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.6)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.08)";
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)";
-          }}
+          className="absolute left-7 top-5 flex items-center gap-[7px] rounded-lg border border-signal-security/35 bg-signal-security/[0.08] py-2 pl-3.5 pr-4 text-xs font-bold tracking-[0.02em] text-signal-security transition-colors hover:border-signal-security/60 hover:bg-signal-security/[0.18]"
         >
-          <span style={{ fontSize: 14 }}>🚪</span> Leave Team
+          <span className="text-sm">🚪</span> Leave Team
         </button>
 
-        <div style={{
-          display: "grid", gridTemplateColumns: "1fr auto 1fr",
-          alignItems: "center", gap: 32, marginBottom: 18, padding: "0 8px",
-        }}>
+        <div className="mb-[18px] grid grid-cols-[1fr_auto_1fr] items-center gap-8 px-2">
           <div />
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            <div style={{
-              fontSize: 64, lineHeight: 1, marginBottom: 10,
-              filter: `drop-shadow(0 0 18px ${ROLE_COLOR[team.myRole]}55)`,
-              animation: "badge-float 3.4s ease-in-out infinite",
-            }}>
+          <div className="flex flex-col items-center text-center">
+            <div
+              className="mb-2.5 text-6xl leading-none"
+              style={{ filter: `drop-shadow(0 0 18px ${roleColor}55)`, animation: "badge-float 3.4s ease-in-out infinite" }}
+            >
               {team.emoji}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 30, fontWeight: 900, color: C.text, letterSpacing: "-0.02em" }}>
+            <div className="flex items-center gap-2.5">
+              <span className="text-[30px] font-black tracking-tight text-foreground">
                 {team.name}
               </span>
-              <span style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                color: ROLE_COLOR[team.myRole],
-                background: `${ROLE_COLOR[team.myRole]}14`,
-                border: `1px solid ${ROLE_COLOR[team.myRole]}30`,
-                borderRadius: 99, padding: "2px 10px",
-              }}>
+              <span
+                className="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]"
+                style={{ color: roleColor, background: `${roleColor}14`, borderColor: `${roleColor}30` }}
+              >
                 {ROLE_ICON[team.myRole]} {ROLE_LABEL[team.myRole]}
               </span>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, justifySelf: "end" }}>
-            <StatItem icon="🏆" value={wins}     label="Wins"    color={C.green} />
-            <StatItem icon="💀" value={losses}   label="Losses"  color={C.red} />
-            <StatItem icon="📊" value={`${winRate}%`} label="Win Rate" color={C.cyan} />
-            <StatItem icon="👥" value={`${team.members.length}/${team.size}`} label="Roster" color={C.gold} />
+          <div className="flex flex-col justify-self-end gap-3.5">
+            <StatItem icon="🏆" value={wins}     label="Wins"    color={GREEN} />
+            <StatItem icon="💀" value={losses}   label="Losses"  color={RED} />
+            <StatItem icon="📊" value={`${winRate}%`} label="Win Rate" color={CYAN} />
+            <StatItem icon="👥" value={`${team.members.length}/${team.size}`} label="Roster" color={GOLD} />
           </div>
         </div>
 
         {/* Raid CTA */}
         {isCaptain && (
-          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 20 }}>
+          <div className="flex justify-center pb-5">
             <button
               onClick={startRaid}
               disabled={raiding}
+              className={`relative flex flex-col items-center gap-0.5 overflow-hidden rounded-2xl border-none px-14 py-4 transition-transform enabled:hover:scale-[1.045] ${
+                raiding ? "cursor-default opacity-70" : "cursor-pointer opacity-100"
+              }`}
               style={{
-                position: "relative", overflow: "hidden",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-                padding: "16px 56px", borderRadius: 16, border: "none",
-                cursor: raiding ? "default" : "pointer",
                 background: raiding
-                  ? "rgba(245,185,66,0.25)"
-                  : `linear-gradient(100deg, #e6a530 0%, #f5b942 25%, #ffe08a 50%, #f5b942 75%, #e6a530 100%)`,
+                  ? "color-mix(in oklab, var(--signal-performance) 25%, transparent)"
+                  : "linear-gradient(100deg, color-mix(in oklab, var(--signal-performance) 80%, black) 0%, var(--signal-performance) 25%, color-mix(in oklab, var(--signal-performance) 45%, white) 50%, var(--signal-performance) 75%, color-mix(in oklab, var(--signal-performance) 80%, black) 100%)",
                 backgroundSize: "250% 100%",
                 animation: raiding ? "none" : "raid-glow 2.2s ease-in-out infinite, raid-shimmer 3.5s linear infinite",
-                opacity: raiding ? 0.7 : 1,
-                transform: "scale(1)",
-                transition: "transform 0.15s ease",
               }}
-              onMouseEnter={(e) => { if (!raiding) e.currentTarget.style.transform = "scale(1.045)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
             >
-              <span style={{ fontSize: 22, fontWeight: 900, color: "#241505", letterSpacing: "0.03em" }}>
+              <span className="text-[22px] font-black tracking-[0.03em] text-background">
                 {raiding ? "⏳ Launching Raid…" : "⚔️ START RAID"}
               </span>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: "#4a3410", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              <span className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-background/60">
                 Lead your squad into battle
               </span>
             </button>
           </div>
         )}
         {!isCaptain && (
-          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 18 }}>
-            <div style={{
-              fontSize: 11.5, color: C.muted, fontWeight: 600,
-              background: "rgba(201,214,218,0.04)", border: `1px solid ${C.border}`,
-              borderRadius: 99, padding: "7px 18px",
-            }}>
+          <div className="flex justify-center pb-[18px]">
+            <div className="rounded-full border border-border bg-foreground/[0.04] px-4.5 py-[7px] text-[11.5px] font-semibold text-foreground-subtle">
               ⏳ Only the captain {ROLE_ICON.captain} can launch a raid
             </div>
           </div>
         )}
 
         {/* Tab bar */}
-        <div style={{ display: "flex", gap: 4 }}>
+        <div className="flex gap-1">
           {TABS.map(({ id, label, icon }) => (
             <button
               key={id} onClick={() => setTab(id)}
-              style={{
-                padding: "8px 18px", borderRadius: "10px 10px 0 0",
-                fontSize: 12.5, fontWeight: 700, cursor: "pointer", border: "none",
-                display: "flex", alignItems: "center", gap: 6,
-                background: tab === id ? "rgba(61,220,132,0.1)" : "transparent",
-                color: tab === id ? C.green : C.muted,
-                borderBottom: tab === id ? `2px solid ${C.green}` : "2px solid transparent",
-                transition: "color 0.15s, background 0.15s",
-              }}
+              className={`flex items-center gap-1.5 rounded-t-[10px] border-none px-4.5 py-2 text-[12.5px] font-bold transition-colors ${
+                tab === id
+                  ? "border-b-2 border-signal-scalability bg-signal-scalability/10 text-signal-scalability"
+                  : "border-b-2 border-transparent bg-transparent text-foreground-subtle"
+              }`}
             >
               <span>{icon}</span> {label}
             </button>
@@ -796,9 +689,9 @@ function InTeamView({ team, myClerkId, onRefresh, onLeave }) {
       </div>
 
       {/* Tab content */}
-      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div className="flex flex-1 flex-col overflow-hidden">
         {tab === "members" && (
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+          <div className="flex-1 overflow-y-auto px-5 py-4">
             {team.members.map((m) => (
               <MemberRow
                 key={m.clerkId}
@@ -873,15 +766,15 @@ export default function TeamsPanel({ myClerkId }) {
 
   if (loading) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: C.muted, fontSize: 13 }}>Loading…</span>
+      <div className="flex flex-1 items-center justify-center">
+        <span className="text-[13px] text-foreground-subtle">Loading…</span>
       </div>
     );
   }
 
   if (!team) {
     return (
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div className="flex flex-1 overflow-hidden">
         <CreateTeamForm onCreated={() => fetchTeam()} />
         <OpenTeamsList onJoined={() => fetchTeam()} />
       </div>

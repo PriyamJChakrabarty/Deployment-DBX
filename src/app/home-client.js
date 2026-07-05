@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+import gsap from "gsap";
 import ReturnToDuelButton from "@/components/return-to-duel";
 import OnlinePlayersWidget from "@/components/online-players";
 import { FEATURES } from "@/lib/features";
+import { COLORS, RESULT_COLORS } from "@/lib/theme";
+
+const ScannerField = dynamic(() => import("@/components/scanner-field"), { ssr: false });
 
 // ── Constants ──────────────────────────────────────────────────
 const ALL_CARDS = [
@@ -15,7 +20,7 @@ const ALL_CARDS = [
     sub:       "SOLO MODE",
     desc:      "Debug real code at your own pace. Hunt bugs across Security, Performance, Scalability, Ethics, and Maintainability.",
     href:      "/duel",
-    color:     "#22d3ee",
+    color:     "#2dd881",
     cta:       "Start Practice →",
     available: true,
   },
@@ -26,7 +31,7 @@ const ALL_CARDS = [
     sub:       "LIVE PvP",
     desc:      "Race another engineer in real-time. First to find all five bug categories wins. Skill decides everything.",
     href:      "/live-battle",
-    color:     "#3ddc84",
+    color:     COLORS.brand,
     cta:       "Find Opponent →",
     available: true,
   },
@@ -37,7 +42,7 @@ const ALL_CARDS = [
     sub:       "SQUADS",
     desc:      "Full codebase, divided by speciality. Navigate the file tree, hunt bugs by category, rack up team score.",
     href:      "/group-raid-page",
-    color:     "#f5b942",
+    color:     "#b794f6",
     cta:       "Launch Raid →",
     available: true,
   },
@@ -53,9 +58,9 @@ const TABS = [
 ];
 
 const RESULT = {
-  win:  { emoji: "🏆", color: "#3ddc84", label: "WIN"  },
-  loss: { emoji: "💀", color: "#ff5c5c", label: "LOSS" },
-  draw: { emoji: "🤝", color: "#f5b942", label: "DRAW" },
+  win:  { emoji: "🏆", color: RESULT_COLORS.win,  label: "WIN"  },
+  loss: { emoji: "💀", color: RESULT_COLORS.loss, label: "LOSS" },
+  draw: { emoji: "🤝", color: RESULT_COLORS.draw, label: "DRAW" },
 };
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -75,22 +80,17 @@ function timeAgo(d) {
 }
 
 // ── Stat chip ─────────────────────────────────────────────────
-function StatChip({ label, value, color }) {
+function StatChip({ label, value, color, chipRef }) {
   return (
-    <div style={{
-      background: "rgba(201,214,218,0.03)",
-      border:     "1px solid rgba(201,214,218,0.08)",
-      borderRadius: "14px",
-      padding: "18px 28px",
-      textAlign: "center",
-      minWidth: "120px",
-      flex: "1 1 120px",
-      maxWidth: "170px",
-    }}>
-      <div style={{ fontSize: "28px", fontWeight: 900, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
+    <div
+      ref={chipRef}
+      className="flex-1 rounded-2xl border border-border px-7 py-4.5 text-center"
+      style={{ minWidth: "120px", maxWidth: "170px", background: "color-mix(in oklab, var(--surface) 60%, transparent)" }}
+    >
+      <div className="text-[28px] font-black leading-none tracking-tight" style={{ color }}>
         {value}
       </div>
-      <div style={{ fontSize: "10.5px", color: "#4a6570", marginTop: "6px", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+      <div className="mt-1.5 font-mono text-[10.5px] uppercase tracking-[0.07em] text-foreground-subtle">
         {label}
       </div>
     </div>
@@ -98,50 +98,36 @@ function StatChip({ label, value, color }) {
 }
 
 const TEAM_LABELS  = ["Alpha", "Bravo"];
-const TEAM_COLORS  = ["#3ddc84", "#22d3ee"];
+const TEAM_COLORS  = [COLORS.brand, "#22d3ee"];
 
 // ── Expandable row shell ──────────────────────────────────────
 function ExpandableRow({ header, children, accentColor }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{
-      background: "#080f12",
-      border: `1px solid ${open ? (accentColor + "38") : "rgba(201,214,218,0.07)"}`,
-      borderRadius: "10px",
-      overflow: "hidden",
-      transition: "border-color 0.2s",
-    }}>
+    <div
+      className="overflow-hidden rounded-[10px] border transition-colors"
+      style={{ background: COLORS.background, borderColor: open ? `${accentColor}38` : COLORS.border }}
+    >
       {/* Header row */}
       <button
         onClick={() => setOpen((o) => !o)}
-        style={{
-          width: "100%", background: "none", border: "none",
-          cursor: "pointer", textAlign: "left",
-          display: "flex", alignItems: "center", gap: "16px",
-          padding: "13px 18px",
-        }}
+        className="flex w-full items-center gap-4 px-4.5 py-3.5 text-left"
       >
         {header}
-        <span style={{
-          fontSize: "11px", color: "#4a6570", flexShrink: 0, marginLeft: "auto",
-          transition: "transform 0.2s",
-          display: "inline-block",
-          transform: open ? "rotate(180deg)" : "rotate(0deg)",
-        }}>
+        <span
+          className="ml-auto flex-shrink-0 text-[11px] text-foreground-subtle transition-transform"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
           ▾
         </span>
       </button>
 
       {/* Expanded body */}
-      <div style={{
-        maxHeight: open ? "400px" : "0px",
-        overflow: "hidden",
-        transition: "max-height 0.3s ease",
-      }}>
-        <div style={{
-          borderTop: `1px solid ${accentColor}22`,
-          padding: "16px 18px 18px",
-        }}>
+      <div
+        className="overflow-hidden transition-[max-height] duration-300 ease-out"
+        style={{ maxHeight: open ? "400px" : "0px" }}
+      >
+        <div className="border-t px-4.5 pb-4.5 pt-4" style={{ borderColor: `${accentColor}22` }}>
           {children}
         </div>
       </div>
@@ -157,44 +143,43 @@ function DuelRow({ duel }) {
       accentColor={meta.color}
       header={
         <>
-          <div style={{ width: "42px", textAlign: "center", flexShrink: 0 }}>
-            <div style={{ fontSize: "20px", lineHeight: 1 }}>{meta.emoji}</div>
-            <div style={{ fontSize: "9px", fontWeight: 800, color: meta.color, letterSpacing: "0.06em", marginTop: "2px" }}>
+          <div className="w-[42px] flex-shrink-0 text-center">
+            <div className="text-xl leading-none">{meta.emoji}</div>
+            <div className="mt-0.5 font-mono text-[9px] font-extrabold tracking-[0.06em]" style={{ color: meta.color }}>
               {meta.label}
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#e8f0f3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold text-foreground">
               {duel.challengeSlot}
             </div>
-            <div style={{ fontSize: "11.5px", color: "#4a6570", marginTop: "2px" }}>
+            <div className="mt-0.5 text-[11.5px] text-foreground-subtle">
               vs {duel.opponentName}
             </div>
           </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: "13.5px", fontWeight: 700, color: meta.color }}>
-              {duel.myScore} <span style={{ color: "#4a6570", fontWeight: 400, fontSize: "12px" }}>vs</span> {duel.opponentScore}
+          <div className="flex-shrink-0 text-right">
+            <div className="text-[13.5px] font-bold" style={{ color: meta.color }}>
+              {duel.myScore} <span className="text-[12px] font-normal text-foreground-subtle">vs</span> {duel.opponentScore}
             </div>
-            <div style={{ fontSize: "10.5px", color: "#4a6570", marginTop: "2px" }}>{timeAgo(duel.startedAt)}</div>
+            <div className="mt-0.5 text-[10.5px] text-foreground-subtle">{timeAgo(duel.startedAt)}</div>
           </div>
         </>
       }
     >
-      {/* Summary card */}
-      <div style={{ display: "flex", gap: "32px", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "10px", fontWeight: 700, color: "#3ddc84", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>You</div>
-          <div style={{ fontSize: "36px", fontWeight: 900, color: "#e8f0f3" }}>{duel.myScore}</div>
-          <div style={{ fontSize: "11px", color: "#4a6570", marginTop: "3px" }}>pts</div>
+      <div className="flex items-center justify-center gap-8">
+        <div className="text-center">
+          <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: RESULT_COLORS.win }}>You</div>
+          <div className="text-[36px] font-black text-foreground">{duel.myScore}</div>
+          <div className="mt-0.5 text-[11px] text-foreground-subtle">pts</div>
         </div>
-        <div style={{ fontSize: "16px", fontWeight: 900, color: "#4a6570" }}>VS</div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "10px", fontWeight: 700, color: "#22d3ee", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>{duel.opponentName}</div>
-          <div style={{ fontSize: "36px", fontWeight: 900, color: "#e8f0f3" }}>{duel.opponentScore}</div>
-          <div style={{ fontSize: "11px", color: "#4a6570", marginTop: "3px" }}>pts</div>
+        <div className="text-base font-black text-foreground-subtle">VS</div>
+        <div className="text-center">
+          <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-signal-ethics">{duel.opponentName}</div>
+          <div className="text-[36px] font-black text-foreground">{duel.opponentScore}</div>
+          <div className="mt-0.5 text-[11px] text-foreground-subtle">pts</div>
         </div>
       </div>
-      <div style={{ textAlign: "center", marginTop: "12px", fontSize: "11px", color: "#4a6570" }}>
+      <div className="mt-3 text-center text-[11px] text-foreground-subtle">
         {duel.challengeSlot} · Match #{duel.matchId}
       </div>
     </ExpandableRow>
@@ -214,72 +199,62 @@ function RaidRow({ raid }) {
       accentColor={meta.color}
       header={
         <>
-          <div style={{ width: "42px", textAlign: "center", flexShrink: 0 }}>
-            <div style={{ fontSize: "20px", lineHeight: 1 }}>{meta.emoji}</div>
-            <div style={{ fontSize: "9px", fontWeight: 800, color: meta.color, letterSpacing: "0.06em", marginTop: "2px" }}>
+          <div className="w-[42px] flex-shrink-0 text-center">
+            <div className="text-xl leading-none">{meta.emoji}</div>
+            <div className="mt-0.5 font-mono text-[9px] font-extrabold tracking-[0.06em]" style={{ color: meta.color }}>
               {meta.label}
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#e8f0f3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold text-foreground">
               {raid.codebaseFolder}
             </div>
-            <div style={{ fontSize: "11.5px", color: "#4a6570", marginTop: "2px" }}>
+            <div className="mt-0.5 text-[11.5px] text-foreground-subtle">
               Team {TEAM_LABELS[raid.myTeamId ?? 0]} vs Team {TEAM_LABELS[raid.myTeamId === 0 ? 1 : 0]}
             </div>
           </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: "13.5px", fontWeight: 700, color: meta.color }}>
+          <div className="flex-shrink-0 text-right">
+            <div className="text-[13.5px] font-bold" style={{ color: meta.color }}>
               {myTeam?.totalScore ?? 0}{" "}
-              <span style={{ color: "#4a6570", fontWeight: 400, fontSize: "12px" }}>vs</span>{" "}
+              <span className="text-[12px] font-normal text-foreground-subtle">vs</span>{" "}
               {opp?.totalScore ?? 0}
             </div>
-            <div style={{ fontSize: "10.5px", color: "#4a6570", marginTop: "2px" }}>{timeAgo(raid.startedAt)}</div>
+            <div className="mt-0.5 text-[10.5px] text-foreground-subtle">{timeAgo(raid.startedAt)}</div>
           </div>
         </>
       }
     >
-      {/* Summary card: two teams side by side */}
-      <div style={{ display: "flex", gap: "16px" }}>
+      <div className="flex gap-4">
         {[myTeam, opp].filter(Boolean).map((team, i) => {
           const color    = i === 0 ? myTeamColor : oppTeamColor;
           const isWinner = raid.winnerTeam === team.teamId;
           return (
-            <div key={team.teamId} style={{
-              flex: 1,
-              background: `${color}08`,
-              border: `1px solid ${color}25`,
-              borderRadius: "8px",
-              padding: "12px 14px",
-            }}>
-              <div style={{ fontSize: "10px", fontWeight: 800, color, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "8px" }}>
+            <div
+              key={team.teamId}
+              className="flex-1 rounded-lg border p-3.5"
+              style={{ background: `${color}08`, borderColor: `${color}25` }}
+            >
+              <div className="mb-2 font-mono text-[10px] font-extrabold uppercase tracking-[0.08em]" style={{ color }}>
                 Team {TEAM_LABELS[team.teamId]}{isWinner ? " 🏆" : ""}
-                {i === 0 && <span style={{ color: "#4a6570", fontWeight: 400 }}> (You)</span>}
+                {i === 0 && <span className="font-normal text-foreground-subtle"> (You)</span>}
               </div>
               {team.players.map((p) => (
-                <div key={p.clerkId} style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "2px 0",
-                }}>
-                  <span style={{ fontSize: "12px", color: p.isMe ? "#e8f0f3" : "#8ba0a6", fontWeight: p.isMe ? 700 : 400 }}>
+                <div key={p.clerkId} className="flex items-center justify-between py-0.5">
+                  <span className={`text-xs ${p.isMe ? "font-bold text-foreground" : "text-foreground-muted"}`}>
                     {p.isMe ? "◆ " : ""}{p.displayName}
                   </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color }}>{p.totalScore} pts</span>
+                  <span className="text-xs font-bold" style={{ color }}>{p.totalScore} pts</span>
                 </div>
               ))}
-              <div style={{
-                marginTop: "8px", paddingTop: "6px",
-                borderTop: `1px solid ${color}20`,
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-              }}>
-                <span style={{ fontSize: "10px", color: "#4a6570", textTransform: "uppercase", letterSpacing: "0.06em" }}>Team Total</span>
-                <span style={{ fontSize: "14px", fontWeight: 900, color }}>{team.totalScore}</span>
+              <div className="mt-2 flex items-center justify-between border-t pt-1.5" style={{ borderColor: `${color}20` }}>
+                <span className="text-[10px] uppercase tracking-[0.06em] text-foreground-subtle">Team Total</span>
+                <span className="text-sm font-black" style={{ color }}>{team.totalScore}</span>
               </div>
             </div>
           );
         })}
       </div>
-      <div style={{ textAlign: "center", marginTop: "10px", fontSize: "11px", color: "#4a6570" }}>
+      <div className="mt-2.5 text-center text-[11px] text-foreground-subtle">
         {raid.codebaseFolder} · Raid #{raid.matchId}
       </div>
     </ExpandableRow>
@@ -294,36 +269,36 @@ function QuestionRow({ duel }) {
       accentColor={meta.color}
       header={
         <>
-          <div style={{ fontSize: "18px", flexShrink: 0 }}>📄</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#e8f0f3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="flex-shrink-0 text-lg">📄</div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold text-foreground">
               {duel.challengeSlot}
             </div>
-            <div style={{ fontSize: "11px", color: "#4a6570", marginTop: "2px" }}>{timeAgo(duel.startedAt)}</div>
+            <div className="mt-0.5 text-[11px] text-foreground-subtle">{timeAgo(duel.startedAt)}</div>
           </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: meta.color }}>{duel.myScore} pts</div>
-            <div style={{ fontSize: "10px", color: meta.color, marginTop: "2px", letterSpacing: "0.04em" }}>
+          <div className="flex-shrink-0 text-right">
+            <div className="text-[13px] font-bold" style={{ color: meta.color }}>{duel.myScore} pts</div>
+            <div className="mt-0.5 text-[10px] tracking-[0.04em]" style={{ color: meta.color }}>
               {meta.emoji} {meta.label}
             </div>
           </div>
         </>
       }
     >
-      <div style={{ display: "flex", gap: "32px", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "10px", fontWeight: 700, color: "#3ddc84", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>You</div>
-          <div style={{ fontSize: "36px", fontWeight: 900, color: "#e8f0f3" }}>{duel.myScore}</div>
-          <div style={{ fontSize: "11px", color: "#4a6570", marginTop: "3px" }}>pts</div>
+      <div className="flex items-center justify-center gap-8">
+        <div className="text-center">
+          <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: RESULT_COLORS.win }}>You</div>
+          <div className="text-[36px] font-black text-foreground">{duel.myScore}</div>
+          <div className="mt-0.5 text-[11px] text-foreground-subtle">pts</div>
         </div>
-        <div style={{ fontSize: "16px", fontWeight: 900, color: "#4a6570" }}>VS</div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "10px", fontWeight: 700, color: "#22d3ee", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>{duel.opponentName}</div>
-          <div style={{ fontSize: "36px", fontWeight: 900, color: "#e8f0f3" }}>{duel.opponentScore}</div>
-          <div style={{ fontSize: "11px", color: "#4a6570", marginTop: "3px" }}>pts</div>
+        <div className="text-base font-black text-foreground-subtle">VS</div>
+        <div className="text-center">
+          <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-signal-ethics">{duel.opponentName}</div>
+          <div className="text-[36px] font-black text-foreground">{duel.opponentScore}</div>
+          <div className="mt-0.5 text-[11px] text-foreground-subtle">pts</div>
         </div>
       </div>
-      <div style={{ textAlign: "center", marginTop: "12px", fontSize: "11px", color: "#4a6570" }}>
+      <div className="mt-3 text-center text-[11px] text-foreground-subtle">
         {duel.challengeSlot} · Match #{duel.matchId}
       </div>
     </ExpandableRow>
@@ -333,16 +308,12 @@ function QuestionRow({ duel }) {
 // ── Empty state ───────────────────────────────────────────────
 function EmptyState({ icon, msg, hint, href, cta }) {
   return (
-    <div style={{ textAlign: "center", padding: "60px 0" }}>
-      <div style={{ fontSize: "36px", marginBottom: "14px" }}>{icon}</div>
-      <p style={{ fontSize: "15px", color: "#8ba0a6", margin: "0 0 6px" }}>{msg}</p>
-      {hint && <p style={{ fontSize: "13px", color: "#4a6570", margin: "0 0 20px" }}>{hint}</p>}
+    <div className="py-14 text-center">
+      <div className="mb-3.5 text-4xl">{icon}</div>
+      <p className="mb-1.5 text-[15px] text-foreground-muted">{msg}</p>
+      {hint && <p className="mb-5 text-[13px] text-foreground-subtle">{hint}</p>}
       {href && cta && (
-        <Link href={href} style={{
-          background: "#3ddc84", color: "#0d1a1f",
-          textDecoration: "none", padding: "10px 24px",
-          borderRadius: "7px", fontSize: "13px", fontWeight: 800,
-        }}>
+        <Link href={href} className="rounded-lg bg-brand px-6 py-2.5 text-[13px] font-extrabold text-background">
           {cta}
         </Link>
       )}
@@ -357,231 +328,213 @@ export default function HomeClient({ stats, history = [], raidHistory = [] }) {
 
   const hasStats = !!stats;
 
+  const heroRef = useRef(null);
+  const trophyRef = useRef(null);
+  const statChipRefs = useRef([]);
+  const cardRefs = useRef([]);
+
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      if (trophyRef.current) {
+        const counter = { value: 0 };
+        const target = hasStats ? Number(stats.bestScore) || 0 : 0;
+        tl.from(trophyRef.current, { y: 20, opacity: 0, duration: 0.6 }, 0);
+        if (hasStats) {
+          tl.to(
+            counter,
+            {
+              value: target,
+              duration: 1.2,
+              ease: "power2.out",
+              onUpdate: () => {
+                if (trophyRef.current) trophyRef.current.textContent = fmt(Math.round(counter.value));
+              },
+            },
+            0.1
+          );
+        }
+      }
+
+      if (statChipRefs.current.length) {
+        tl.from(statChipRefs.current, { y: 16, opacity: 0, duration: 0.5, stagger: 0.08 }, 0.3);
+      }
+
+      if (cardRefs.current.length) {
+        tl.from(cardRefs.current, { y: 24, opacity: 0, duration: 0.55, stagger: 0.1 }, 0.4);
+      }
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, [hasStats]);
+
+  useLayoutEffect(() => {
+    const card = cardRefs.current[focused];
+    if (!card) return;
+    gsap.fromTo(
+      card,
+      { boxShadow: "0 0 0 0 rgba(255,93,58,0)" },
+      { boxShadow: "0 0 0 1px rgba(255,93,58,0.15)", duration: 0.35, ease: "power2.out" }
+    );
+  }, [focused]);
+
   return (
-    <div style={{
-      backgroundImage: [
-        "radial-gradient(ellipse 90% 55% at 50% -5%, rgba(61,220,132,0.1), transparent 65%)",
-        "linear-gradient(rgba(201,214,218,0.022) 1px, transparent 1px)",
-        "linear-gradient(90deg, rgba(201,214,218,0.022) 1px, transparent 1px)",
-      ].join(", "),
-      backgroundSize: "100% 100%, 44px 44px, 44px 44px",
-    }}>
-
+    <div ref={heroRef} className="relative">
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <section style={{
-        maxWidth: "1100px", margin: "0 auto",
-        padding: "72px 40px 52px",
-        position: "relative",
-      }}>
-        {/* Return-to-duel badge — top-right of hero */}
-        <div style={{ position: "absolute", top: "24px", right: "40px" }}>
-          <ReturnToDuelButton />
-        </div>
+      <section className="relative overflow-hidden px-10 pb-13 pt-18">
+        <ScannerField className="z-0" accent={COLORS.brand} density={360} intensity={0.5} />
 
-        {/* Welcome + name */}
-        <div style={{ textAlign: "center", marginBottom: "44px" }}>
-          <p style={{
-            fontSize: "12px", fontWeight: 700, color: "#3ddc84",
-            letterSpacing: "0.1em", textTransform: "uppercase",
-            margin: "0 0 10px",
-          }}>
-            {hasStats ? "Welcome back," : "Welcome to"}
-          </p>
-          <h1 style={{
-            fontSize: "clamp(28px, 5vw, 42px)",
-            fontWeight: 900, letterSpacing: "-0.03em",
-            color: "#e8f0f3", margin: 0, lineHeight: 1.1,
-          }}>
-            {hasStats ? stats.name : "DebugRoyale"}
-          </h1>
-          {!hasStats && (
-            <p style={{ fontSize: "15px", color: "#8ba0a6", margin: "12px 0 0", lineHeight: 1.6 }}>
-              The competitive arena where engineers hunt bugs — category by category, round by round.
+        <div className="relative z-10 mx-auto max-w-[1100px]">
+          {/* Return-to-duel badge — top-right of hero */}
+          <div className="absolute right-0 top-6">
+            <ReturnToDuelButton />
+          </div>
+
+          {/* Welcome + name */}
+          <div className="mb-11 text-center">
+            <p className="mb-2.5 font-mono text-xs font-bold uppercase tracking-[0.1em] text-brand">
+              {hasStats ? "Welcome back," : "Welcome to"}
             </p>
+            <h1 className="text-[clamp(28px,5vw,42px)] font-bold leading-tight tracking-tight text-foreground font-display">
+              {hasStats ? stats.name : "DebugRoyale"}
+            </h1>
+            {!hasStats && (
+              <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-foreground-muted">
+                The competitive arena where engineers hunt bugs — category by category, round by round.
+              </p>
+            )}
+          </div>
+
+          {/* Trophy number */}
+          <div className="relative mb-11 text-center">
+            <div
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ width: "300px", height: "180px", background: "radial-gradient(ellipse, var(--brand-dim), transparent 70%)" }}
+            />
+
+            <div className="mb-0 text-[52px] leading-none">🏆</div>
+            <div
+              ref={trophyRef}
+              className="font-display text-[clamp(80px,13vw,130px)] font-bold leading-none tracking-tight text-brand text-glow-brand"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
+              {hasStats ? fmt(stats.bestScore) : "—"}
+            </div>
+            <div className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-foreground-subtle">
+              Bug Slayer Score
+            </div>
+          </div>
+
+          {/* Stats row */}
+          {hasStats ? (
+            <div className="flex flex-wrap justify-center gap-3.5">
+              <StatChip chipRef={(el) => (statChipRefs.current[0] = el)} label="Total Points"  value={fmt(stats.totalPoints)}        color="#22d3ee" />
+              <StatChip chipRef={(el) => (statChipRefs.current[1] = el)} label="Wins"          value={fmt(stats.wins)}               color="#2dd881" />
+              <StatChip chipRef={(el) => (statChipRefs.current[2] = el)} label="Losses"        value={fmt(stats.losses)}             color="#ff3b5c" />
+              <StatChip chipRef={(el) => (statChipRefs.current[3] = el)} label="Practiced"     value={fmt(stats.questionsPracticed)} color="#b794f6" />
+            </div>
+          ) : (
+            <div className="text-center">
+              <Link
+                href="/sign-in"
+                className="inline-block rounded-lg bg-brand px-8 py-3.5 text-sm font-extrabold text-background shadow-[0_0_40px_var(--brand-dim)]"
+              >
+                Sign In to See Your Stats →
+              </Link>
+            </div>
           )}
         </div>
-
-        {/* Trophy number */}
-        <div style={{ textAlign: "center", marginBottom: "44px", position: "relative" }}>
-          {/* Glow behind number */}
-          <div style={{
-            position: "absolute", top: "50%", left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "300px", height: "180px",
-            background: "radial-gradient(ellipse, rgba(61,220,132,0.15), transparent 70%)",
-            pointerEvents: "none",
-          }} />
-
-          <div style={{ fontSize: "52px", lineHeight: 1, marginBottom: "0px" }}>🏆</div>
-          <div style={{
-            fontSize: "clamp(80px, 13vw, 130px)",
-            fontWeight: 900,
-            color: "#3ddc84",
-            lineHeight: 1.0,
-            letterSpacing: "-0.04em",
-            textShadow: "0 0 48px rgba(61,220,132,0.45), 0 0 100px rgba(61,220,132,0.2)",
-            fontVariantNumeric: "tabular-nums",
-          }}>
-            {hasStats ? fmt(stats.bestScore) : "—"}
-          </div>
-          <div style={{
-            fontSize: "11px", color: "#4a6570",
-            letterSpacing: "0.1em", textTransform: "uppercase",
-            marginTop: "6px",
-          }}>
-            Bug Slayer Score
-          </div>
-        </div>
-
-        {/* Stats row */}
-        {hasStats ? (
-          <div style={{ display: "flex", gap: "14px", justifyContent: "center", flexWrap: "wrap" }}>
-            <StatChip label="Total Points"  value={fmt(stats.totalPoints)}        color="#22d3ee" />
-            <StatChip label="Wins"          value={fmt(stats.wins)}               color="#3ddc84" />
-            <StatChip label="Losses"        value={fmt(stats.losses)}             color="#ff5c5c" />
-            <StatChip label="Practiced"     value={fmt(stats.questionsPracticed)} color="#a78bfa" />
-          </div>
-        ) : (
-          <div style={{ textAlign: "center" }}>
-            <Link href="/sign-in" style={{
-              display: "inline-block",
-              background: "#3ddc84", color: "#0d1a1f",
-              textDecoration: "none", padding: "13px 32px",
-              borderRadius: "8px", fontSize: "14px", fontWeight: 800,
-              boxShadow: "0 0 40px rgba(61,220,132,0.25)",
-            }}>
-              Sign In to See Your Stats →
-            </Link>
-          </div>
-        )}
       </section>
 
       {/* ── Carousel ──────────────────────────────────────────── */}
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "8px 40px 64px" }}>
-        <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <h2 style={{
-            fontSize: "clamp(18px, 3vw, 24px)",
-            fontWeight: 800, color: "#e8f0f3",
-            letterSpacing: "-0.02em", margin: "0 0 6px",
-          }}>
+      <section className="mx-auto max-w-[1100px] px-10 pb-16 pt-2">
+        <div className="mb-9 text-center">
+          <h2 className="mb-1.5 font-display text-[clamp(18px,3vw,24px)] font-bold tracking-tight text-foreground">
             Choose Your Arena
           </h2>
-          <p style={{ fontSize: "13px", color: "#4a6570", margin: 0 }}>
+          <p className="text-[13px] text-foreground-subtle">
             Hover a card to explore each mode
           </p>
         </div>
 
         <div
           onMouseLeave={() => setFocused(DEFAULT_FOCUSED)}
-          style={{
-            display: "flex", gap: "20px",
-            justifyContent: "center", alignItems: "center",
-            minHeight: "310px",
-          }}
+          className="flex items-center justify-center gap-5"
+          style={{ minHeight: "310px" }}
         >
           {CARDS.map((card, i) => {
             const isActive = focused === i;
             return (
               <div
                 key={card.id}
+                ref={(el) => (cardRefs.current[i] = el)}
                 onMouseEnter={() => setFocused(i)}
                 onClick={() => setFocused(i)}
+                className="flex flex-shrink-0 cursor-pointer flex-col items-center gap-2.5 overflow-hidden rounded-[20px] border text-center transition-all duration-[350ms]"
                 style={{
-                  flexShrink: 0,
                   width:      isActive ? "360px" : "215px",
                   minHeight:  isActive ? "290px" : "220px",
-                  transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
                   opacity:    isActive ? 1 : 0.48,
-                  background: isActive ? `${card.color}0c` : "rgba(8,15,18,0.7)",
-                  border:     `1px solid ${isActive ? card.color + "48" : "rgba(201,214,218,0.06)"}`,
-                  borderRadius: "20px",
+                  background: isActive ? `${card.color}0c` : "color-mix(in oklab, var(--surface) 70%, transparent)",
+                  borderColor: isActive ? `${card.color}48` : "var(--border)",
                   padding:    isActive ? "32px 28px" : "24px 20px",
-                  cursor:     "pointer",
                   boxShadow:  isActive
                     ? `0 0 0 1px ${card.color}20, 0 16px 56px ${card.color}18, 0 4px 20px rgba(0,0,0,0.3)`
                     : "none",
                   transform:  isActive ? "translateY(-10px)" : "translateY(0)",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", gap: "10px",
-                  textAlign: "center",
-                  overflow: "hidden",
                 }}
               >
                 {/* Sub-label */}
-                <div style={{
-                  fontSize: "9px", fontWeight: 800, letterSpacing: "0.1em",
-                  color: isActive ? card.color : "#4a6570",
-                  textTransform: "uppercase",
-                  transition: "color 0.35s",
-                }}>
+                <div
+                  className="font-mono text-[9px] font-extrabold uppercase tracking-[0.1em] transition-colors duration-[350ms]"
+                  style={{ color: isActive ? card.color : "var(--foreground-subtle)" }}
+                >
                   {card.sub}
                 </div>
 
                 {/* Icon */}
-                <div style={{
-                  fontSize: isActive ? "60px" : "40px",
-                  lineHeight: 1,
-                  transition: "font-size 0.35s",
-                  marginBottom: "2px",
-                }}>
+                <div
+                  className="mb-0.5 leading-none transition-[font-size] duration-[350ms]"
+                  style={{ fontSize: isActive ? "60px" : "40px" }}
+                >
                   {card.icon}
                 </div>
 
                 {/* Title */}
-                <div style={{
-                  fontSize: isActive ? "22px" : "15px",
-                  fontWeight: 900,
-                  color: isActive ? "#e8f0f3" : "#8ba0a6",
-                  letterSpacing: "-0.02em",
-                  transition: "all 0.35s",
-                }}>
+                <div
+                  className="font-display font-bold tracking-tight transition-all duration-[350ms]"
+                  style={{ fontSize: isActive ? "22px" : "15px", color: isActive ? "var(--foreground)" : "var(--foreground-muted)" }}
+                >
                   {card.label}
                 </div>
 
                 {/* Description — only when active */}
-                <div style={{
-                  fontSize: "13px", color: "#8ba0a6",
-                  lineHeight: 1.6, margin: "0",
-                  maxHeight: isActive ? "120px" : "0px",
-                  overflow: "hidden",
-                  transition: "max-height 0.4s ease, opacity 0.35s",
-                  opacity: isActive ? 1 : 0,
-                }}>
+                <div
+                  className="overflow-hidden text-[13px] leading-relaxed text-foreground-muted transition-[max-height,opacity] duration-[400ms]"
+                  style={{ maxHeight: isActive ? "120px" : "0px", opacity: isActive ? 1 : 0 }}
+                >
                   {card.desc}
                 </div>
 
                 {/* CTA — only when active */}
-                <div style={{
-                  marginTop: "auto",
-                  maxHeight: isActive ? "60px" : "0px",
-                  overflow: "hidden",
-                  transition: "max-height 0.4s ease, opacity 0.35s",
-                  opacity: isActive ? 1 : 0,
-                  width: "100%",
-                  display: "flex", justifyContent: "center",
-                }}>
+                <div
+                  className="mt-auto flex w-full justify-center overflow-hidden transition-[max-height,opacity] duration-[400ms]"
+                  style={{ maxHeight: isActive ? "60px" : "0px", opacity: isActive ? 1 : 0 }}
+                >
                   {card.available ? (
-                    <Link href={card.href} style={{
-                      display: "inline-block",
-                      background: card.color, color: "#0d1a1f",
-                      textDecoration: "none",
-                      padding: "11px 28px",
-                      borderRadius: "9px",
-                      fontSize: "13px", fontWeight: 800,
-                      boxShadow: `0 0 28px ${card.color}48`,
-                      letterSpacing: "-0.01em",
-                    }}>
+                    <Link
+                      href={card.href}
+                      className="inline-block rounded-[9px] px-7 py-2.5 text-[13px] font-extrabold tracking-tight text-background"
+                      style={{ background: card.color, boxShadow: `0 0 28px ${card.color}48` }}
+                    >
                       {card.cta}
                     </Link>
                   ) : (
-                    <span style={{
-                      display: "inline-block",
-                      background: "transparent", color: card.color,
-                      border: `1px solid ${card.color}48`,
-                      padding: "11px 28px",
-                      borderRadius: "9px",
-                      fontSize: "13px", fontWeight: 700,
-                    }}>
+                    <span
+                      className="inline-block rounded-[9px] border px-7 py-2.5 text-[13px] font-bold"
+                      style={{ color: card.color, borderColor: `${card.color}48` }}
+                    >
                       Coming Soon
                     </span>
                   )}
@@ -596,34 +549,25 @@ export default function HomeClient({ stats, history = [], raidHistory = [] }) {
       </section>
 
       {/* ── Activity Tabs ──────────────────────────────────────── */}
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 40px 100px" }}>
+      <section className="mx-auto max-w-[1100px] px-10 pb-24">
 
         {/* Tab bar */}
-        <div style={{
-          display: "flex", gap: "0",
-          borderBottom: "1px solid rgba(201,214,218,0.08)",
-          marginBottom: "28px",
-        }}>
-          {TABS.map((tab, i) => (
-            <button
-              key={tab.label}
-              onClick={() => setActiveTab(i)}
-              style={{
-                background: "none", border: "none",
-                borderBottom: `2px solid ${activeTab === i ? "#3ddc84" : "transparent"}`,
-                color: activeTab === i ? "#3ddc84" : "#4a6570",
-                padding: "10px 18px",
-                fontSize: "13px", fontWeight: activeTab === i ? 700 : 400,
-                cursor: "pointer",
-                transition: "all 0.15s",
-                marginBottom: "-1px",
-                display: "flex", alignItems: "center", gap: "6px",
-              }}
-            >
-              <span style={{ fontSize: "14px" }}>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
+        <div className="mb-7 flex border-b border-border">
+          {TABS.map((tab, i) => {
+            const isActive = activeTab === i;
+            return (
+              <button
+                key={tab.label}
+                onClick={() => setActiveTab(i)}
+                className={`-mb-px flex items-center gap-1.5 border-b-2 px-4.5 py-2.5 text-[13px] transition-all ${
+                  isActive ? "border-brand font-bold text-brand" : "border-transparent font-normal text-foreground-subtle"
+                }`}
+              >
+                <span className="text-sm">{tab.icon}</span>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab content */}
@@ -647,7 +591,7 @@ export default function HomeClient({ stats, history = [], raidHistory = [] }) {
               cta="Start a Duel →"
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="flex flex-col gap-2">
               {history.map((d) => <QuestionRow key={d.matchId} duel={d} />)}
             </div>
           )
@@ -663,7 +607,7 @@ export default function HomeClient({ stats, history = [], raidHistory = [] }) {
               cta="Find an Opponent →"
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="flex flex-col gap-2">
               {history.map((d) => <DuelRow key={d.matchId} duel={d} />)}
             </div>
           )
@@ -679,7 +623,7 @@ export default function HomeClient({ stats, history = [], raidHistory = [] }) {
               cta="Start a Group Raid →"
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="flex flex-col gap-2">
               {raidHistory.map((r) => <RaidRow key={r.matchId} raid={r} />)}
             </div>
           )
@@ -687,19 +631,14 @@ export default function HomeClient({ stats, history = [], raidHistory = [] }) {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────── */}
-      <div style={{ borderTop: "1px solid rgba(201,214,218,0.07)" }}>
-      <footer style={{
-        maxWidth: "1100px", margin: "0 auto",
-        padding: "24px 40px",
-        display: "flex", justifyContent: "space-between",
-        alignItems: "center", flexWrap: "wrap", gap: "12px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-          <span style={{ fontSize: "14px", fontWeight: 900, color: "#3ddc84", letterSpacing: "-0.02em" }}>Debug</span>
-          <span style={{ fontSize: "14px", fontWeight: 900, color: "#e8f0f3", letterSpacing: "-0.02em" }}>Royale</span>
-        </div>
-        <span style={{ fontSize: "12px", color: "#4a6570" }}>Powered by Groq — Competitive Code Review Arena</span>
-      </footer>
+      <div className="border-t border-border">
+        <footer className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3 px-10 py-6">
+          <div className="flex items-center gap-0.5 font-display text-sm font-bold tracking-tight">
+            <span className="text-foreground">Debug</span>
+            <span className="text-brand">Royale</span>
+          </div>
+          <span className="text-xs text-foreground-subtle">Powered by Groq — Competitive Code Review Arena</span>
+        </footer>
       </div>
     </div>
   );

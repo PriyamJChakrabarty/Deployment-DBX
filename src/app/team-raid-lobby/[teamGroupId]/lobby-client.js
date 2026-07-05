@@ -87,58 +87,31 @@ export default function LobbyClient({ teamGroupId, myClerkId, isCaptain, initial
   console.log("[lobby-client] render — isCaptain=", isCaptain, "allPresent=", allPresent, "canStart=", canStart,
     "members=", JSON.stringify(members.map((m) => ({ clerkId: m.clerkId, status: m.status, present: m.present }))));
 
-  const C = {
-    bg:     "#0d1a1f",
-    panel:  "#0a1419",
-    card:   "#0e191f",
-    border: "rgba(201,214,218,0.07)",
-    green:  "#3ddc84",
-    gold:   "#f5b942",
-    text:   "#e8f0f3",
-    sub:    "#8ba0a6",
-    muted:  "#4a6570",
-    red:    "#ef4444",
-  };
-
   return (
-    <div style={{
-      flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", padding: "24px 16px", gap: 20,
-    }}>
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-6">
 
       {/* Header */}
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: C.gold, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
+      <div className="text-center">
+        <div className="mb-1.5 font-mono text-[13px] font-extrabold uppercase tracking-[0.1em] text-signal-performance">
           Team Raid Lobby
         </div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: C.text }}>
+        <div className="text-lg font-bold text-foreground">
           {state.teamName ?? "Your Team"}
         </div>
-        <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
+        <div className="mt-1 text-xs text-foreground-subtle">
           {allPresent ? "All members present — ready to raid!" : `Waiting for members to join…`}
         </div>
       </div>
 
       {/* Member list */}
-      <div style={{
-        background: C.panel, border: `1px solid ${C.border}`,
-        borderRadius: 12, width: "100%", maxWidth: 380, overflow: "hidden",
-      }}>
+      <div className="w-full max-w-[380px] overflow-hidden rounded-xl border border-border bg-surface">
         {/* Captain row */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "12px 16px", borderBottom: `1px solid ${C.border}`,
-        }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: "50%",
-            background: C.green,
-            boxShadow: `0 0 6px ${C.green}`,
-            flexShrink: 0,
-          }} />
-          <span style={{ flex: 1, fontSize: 13, color: C.text, fontWeight: 600 }}>
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <div className="h-2 w-2 flex-shrink-0 rounded-full bg-signal-scalability shadow-[0_0_6px_var(--signal-scalability)]" />
+          <span className="flex-1 text-[13px] font-semibold text-foreground">
             {state.captainName}
           </span>
-          <span style={{ fontSize: 10, color: C.gold, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          <span className="font-mono text-[10px] font-extrabold uppercase tracking-[0.06em] text-signal-performance">
             Captain
           </span>
         </div>
@@ -147,21 +120,17 @@ export default function LobbyClient({ teamGroupId, myClerkId, isCaptain, initial
         {members.map((m) => {
           const isPresent = m.present;
           return (
-            <div key={m.clerkId} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "12px 16px", borderBottom: `1px solid ${C.border}`,
-            }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: isPresent ? C.green : C.muted,
-                boxShadow: isPresent ? `0 0 6px ${C.green}` : "none",
-                flexShrink: 0,
-              }} />
-              <span style={{ flex: 1, fontSize: 13, color: isPresent ? C.text : C.sub, fontWeight: 600 }}>
+            <div key={m.clerkId} className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <div
+                className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                  isPresent ? "bg-signal-scalability shadow-[0_0_6px_var(--signal-scalability)]" : "bg-foreground-subtle"
+                }`}
+              />
+              <span className={`flex-1 text-[13px] font-semibold ${isPresent ? "text-foreground" : "text-foreground-muted"}`}>
                 {m.name}
-                {m.clerkId === myClerkId && <span style={{ color: C.muted, fontWeight: 400 }}> (you)</span>}
+                {m.clerkId === myClerkId && <span className="font-normal text-foreground-subtle"> (you)</span>}
               </span>
-              <span style={{ fontSize: 11, color: isPresent ? C.green : C.muted }}>
+              <span className={`text-[11px] ${isPresent ? "text-signal-scalability" : "text-foreground-subtle"}`}>
                 {isPresent ? "In lobby" : m.status === "pending" ? "Pending…" : m.status}
               </span>
             </div>
@@ -171,25 +140,20 @@ export default function LobbyClient({ teamGroupId, myClerkId, isCaptain, initial
 
       {/* Start button (captain only) */}
       {isCaptain && (
-        <div style={{ width: "100%", maxWidth: 380 }}>
+        <div className="w-full max-w-[380px]">
           <button
             onClick={handleStart}
             disabled={!canStart}
-            style={{
-              width: "100%", padding: "13px 0",
-              background: canStart ? C.gold : "rgba(201,214,218,0.05)",
-              color: canStart ? "#0d1a1f" : C.muted,
-              border: canStart ? "none" : `1px solid ${C.border}`,
-              borderRadius: 10, fontSize: 14, fontWeight: 800,
-              cursor: canStart ? "pointer" : "not-allowed",
-              letterSpacing: "0.05em",
-              transition: "all 0.2s",
-            }}
+            className={`w-full rounded-[10px] py-[13px] text-sm font-extrabold tracking-[0.05em] transition-all duration-200 ${
+              canStart
+                ? "cursor-pointer bg-signal-performance text-background"
+                : "cursor-not-allowed border border-border bg-foreground/5 text-foreground-subtle"
+            }`}
           >
             {starting ? "Starting…" : "⚔ Start Raid"}
           </button>
           {!allPresent && (
-            <div style={{ fontSize: 11, color: C.muted, textAlign: "center", marginTop: 8 }}>
+            <div className="mt-2 text-center text-[11px] text-foreground-subtle">
               Start unlocks when all members join the lobby
             </div>
           )}
@@ -197,13 +161,13 @@ export default function LobbyClient({ teamGroupId, myClerkId, isCaptain, initial
       )}
 
       {!isCaptain && (
-        <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>
+        <div className="text-xs italic text-foreground-subtle">
           Waiting for captain to start the raid…
         </div>
       )}
 
       {err && (
-        <div style={{ fontSize: 12, color: C.red, textAlign: "center" }}>{err}</div>
+        <div className="text-center text-xs text-signal-security">{err}</div>
       )}
     </div>
   );

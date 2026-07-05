@@ -6,21 +6,14 @@ import TeamsPanel from "@/app/social/team-panel";
 
 export const metadata = { title: "Teams — DebugRoyale" };
 
-const PAGE_BG = {
-  display: "flex",
-  flexDirection: "column",
-  height: "100vh",
-  overflow: "hidden",
-  background: "#0d1a1f",
-  fontFamily: "'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif",
-};
+const PAGE_CLASS = "flex flex-col h-screen overflow-hidden bg-background font-sans";
 
 export default async function TeamsPage() {
   if (!hasClerkCredentials()) {
     return (
-      <div style={PAGE_BG}>
+      <div className={PAGE_CLASS}>
         <SiteNav active="/teams" />
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <div className="flex flex-1 overflow-hidden">
           <TeamsPanel myClerkId={null} />
         </div>
       </div>
@@ -31,9 +24,9 @@ export default async function TeamsPage() {
   if (!userId) redirect("/sign-in");
 
   return (
-    <div style={PAGE_BG}>
+    <div className={PAGE_CLASS}>
       <SiteNav active="/teams" />
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div className="flex flex-1 overflow-hidden">
         <TeamsPanel myClerkId={userId} />
       </div>
     </div>

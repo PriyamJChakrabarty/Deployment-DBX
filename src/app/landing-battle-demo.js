@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { COLORS, CATEGORY_COLORS } from "@/lib/theme";
 
-const GREEN = "#3ddc84";
-const GOLD  = "#f5b942";
-const CYAN  = "#22d3ee";
-const RED   = "#ef4444";
-const TEXT  = "#e8f0f3";
-const SUB   = "#8ba0a6";
-const MUTED = "#4a6570";
-const CARD  = "#0e191f";
-const BORDER = "rgba(201,214,218,0.08)";
+const GREEN = CATEGORY_COLORS.Scalability;
+const GOLD  = CATEGORY_COLORS.Performance;
+const CYAN  = CATEGORY_COLORS.Ethics;
+const RED   = CATEGORY_COLORS.Security;
+const TEXT  = COLORS.foreground;
+const SUB   = COLORS.foregroundMuted;
+const MUTED = COLORS.foregroundSubtle;
+const CARD  = COLORS.surface;
+const BORDER = COLORS.border;
 
 const KEYFRAMES = `
 @keyframes ld-float-in-left  { from { transform: translateX(-140px) scale(0.7); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
@@ -21,8 +22,8 @@ const KEYFRAMES = `
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 @keyframes ld-glow-pulse {
-  0%, 100% { box-shadow: 0 0 0px rgba(61,220,132,0); }
-  50%      { box-shadow: 0 0 36px rgba(61,220,132,0.45); }
+  0%, 100% { box-shadow: 0 0 0px rgba(45,216,129,0); }
+  50%      { box-shadow: 0 0 36px rgba(45,216,129,0.45); }
 }
 @keyframes ld-battle-zoom {
   0%   { transform: scale(0.4); opacity: 0; }
@@ -47,9 +48,9 @@ const KEYFRAMES = `
   40%           { transform: scale(1);   opacity: 1; }
 }
 @keyframes ld-line-flash {
-  0%   { background: rgba(61,220,132,0); }
-  30%  { background: rgba(61,220,132,0.24); }
-  100% { background: rgba(61,220,132,0); }
+  0%   { background: rgba(45,216,129,0); }
+  30%  { background: rgba(45,216,129,0.24); }
+  100% { background: rgba(45,216,129,0); }
 }
 @keyframes ld-badge-pop {
   0%   { transform: scale(0.4) translateY(6px); opacity: 0; }

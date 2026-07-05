@@ -4,14 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/theme-monokai";
+import { CATEGORIES, RESULT_COLORS, CATEGORY_COLORS } from "@/lib/theme";
 
-const CATEGORIES = [
-  { key: "Security",        label: "Security",        icon: "🔒", color: "#ff5c5c" },
-  { key: "Performance",     label: "Performance",     icon: "⚡", color: "#f5b942" },
-  { key: "Scalability",     label: "Scalability",     icon: "📈", color: "#3ddc84" },
-  { key: "Ethics",          label: "Ethics",          icon: "⚖️", color: "#22d3ee" },
-  { key: "Maintainability", label: "Maintainability", icon: "🔧", color: "#a78bfa" },
-];
+// "Me" reuses the same win-green identity color the dashboard's duel history
+// rows use for "You"; "Opponent" reuses the Ethics signal cyan — matches the
+// convention already shipped in home-client.js's DuelRow.
+const ME_COLOR  = RESULT_COLORS.win;
+const OPP_COLOR = CATEGORY_COLORS.Ethics;
 
 const DUEL_KEYFRAMES = `
 @keyframes duel-score-surge {
@@ -323,7 +322,7 @@ export default function LiveDuelClient({
   }
 
   // ── Derived ────────────────────────────────────────────────
-  const timerColor = timeLeft !== null && timeLeft < 60 ? "#ff5c5c" : "#3ddc84";
+  const timerColor = timeLeft !== null && timeLeft < 60 ? "var(--signal-security)" : ME_COLOR;
   const didIWin    = winnerClerkId === myClerkId;
   const isDraw     = matchStatus === "completed" && !winnerClerkId;
 
@@ -331,67 +330,55 @@ export default function LiveDuelClient({
   // RENDER: end screen
   // ════════════════════════════════════════════════════════════
   if (matchEnded) {
+    const resultColor = matchStatus === "abandoned"
+      ? "var(--foreground-subtle)"
+      : didIWin ? RESULT_COLORS.win : isDraw ? RESULT_COLORS.draw : RESULT_COLORS.loss;
+
     return (
-      <div style={{
-        height: "100vh", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        background: "#0d1117", fontFamily: "'Segoe UI','Aptos','Trebuchet MS',sans-serif",
-        gap: "28px",
-      }}>
-        <div style={{ fontSize: "56px" }}>
+      <div className="flex h-screen flex-col items-center justify-center gap-7 bg-background font-sans">
+        <div className="text-[56px]">
           {matchStatus === "abandoned" ? "🔌" : didIWin ? "🏆" : isDraw ? "🤝" : "💀"}
         </div>
 
-        <h1 style={{
-          fontSize: "clamp(30px,5vw,52px)", fontWeight: 900,
-          color: matchStatus === "abandoned" ? "#8ba0a6" : didIWin ? "#3ddc84" : isDraw ? "#f5b942" : "#ff5c5c",
-          letterSpacing: "-0.03em", margin: 0,
-          textShadow: didIWin ? "0 0 40px rgba(61,220,132,0.4)" : "none",
-        }}>
+        <h1
+          className="m-0 font-display font-black tracking-tight"
+          style={{
+            fontSize: "clamp(30px,5vw,52px)",
+            color: resultColor,
+            textShadow: didIWin ? `0 0 40px ${RESULT_COLORS.win}66` : "none",
+          }}
+        >
           {matchStatus === "abandoned"
             ? "Opponent Disconnected"
             : didIWin ? "You Win!" : isDraw ? "Draw" : "You Lose"}
         </h1>
 
         {/* Score comparison */}
-        <div style={{
-          display: "flex", gap: "48px", alignItems: "center",
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(201,214,218,0.1)",
-          borderRadius: "14px", padding: "24px 40px",
-        }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "11px", fontWeight: 700, color: "#3ddc84", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "8px" }}>You</div>
-            <div style={{ fontSize: "42px", fontWeight: 900, color: "#e8f0f3" }}>{myScore}</div>
-            <div style={{ fontSize: "12px", color: "#4a6570", marginTop: "4px" }}>{myName}</div>
+        <div className="flex items-center gap-12 rounded-2xl border border-border bg-surface px-10 py-6">
+          <div className="text-center">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: ME_COLOR }}>You</div>
+            <div className="text-[42px] font-black text-foreground">{myScore}</div>
+            <div className="mt-1 text-xs text-foreground-subtle">{myName}</div>
           </div>
-          <div style={{ fontSize: "24px", color: "#4a6570", fontWeight: 900 }}>VS</div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "11px", fontWeight: 700, color: "#22d3ee", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "8px" }}>Opponent</div>
-            <div style={{ fontSize: "42px", fontWeight: 900, color: "#e8f0f3" }}>{opponent?.score ?? 0}</div>
-            <div style={{ fontSize: "12px", color: "#4a6570", marginTop: "4px" }}>{opponent?.displayName ?? "Opponent"}</div>
+          <div className="text-2xl font-black text-foreground-subtle">VS</div>
+          <div className="text-center">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-signal-ethics">Opponent</div>
+            <div className="text-[42px] font-black text-foreground">{opponent?.score ?? 0}</div>
+            <div className="mt-1 text-xs text-foreground-subtle">{opponent?.displayName ?? "Opponent"}</div>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="flex gap-3">
           <button
             onClick={() => { window.location.href = "/live-battle"; }}
-            style={{
-              background: "#3ddc84", color: "#0d1a1f", border: "none",
-              padding: "12px 32px", borderRadius: "8px",
-              fontSize: "14px", fontWeight: 800, cursor: "pointer",
-            }}
+            className="cursor-pointer rounded-lg border-none px-8 py-3 text-sm font-extrabold"
+            style={{ background: ME_COLOR, color: "var(--background)" }}
           >
             Play Again →
           </button>
           <button
             onClick={() => { window.location.href = "/home"; }}
-            style={{
-              background: "transparent", color: "#8ba0a6",
-              border: "1px solid rgba(201,214,218,0.15)",
-              padding: "12px 24px", borderRadius: "8px",
-              fontSize: "14px", fontWeight: 600, cursor: "pointer",
-            }}
+            className="cursor-pointer rounded-lg border border-border-strong bg-transparent px-6 py-3 text-sm font-semibold text-foreground-muted"
           >
             Home
           </button>
@@ -409,91 +396,71 @@ export default function LiveDuelClient({
   // RENDER: main game
   // ════════════════════════════════════════════════════════════
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0d1117", color: "#c9d6da", fontFamily: "'Segoe UI','Aptos','Trebuchet MS',sans-serif" }}>
+    <div className="flex h-screen flex-col bg-background font-sans text-foreground-muted">
       <style>{DUEL_KEYFRAMES}</style>
 
       {/* ── Top bar ─────────────────────────────────────────── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "12px",
-        padding: "0 16px", height: "46px", flexShrink: 0,
-        background: "rgba(10,20,25,0.97)",
-        borderBottom: "1px solid rgba(61,220,132,0.1)",
-      }}>
+      <div
+        className="flex h-[46px] flex-shrink-0 items-center gap-3 px-4"
+        style={{ background: "color-mix(in oklab, var(--background) 97%, transparent)", borderBottom: `1px solid ${ME_COLOR}1a` }}
+      >
         {/* Logo */}
-        <a href="/home" style={{ display: "flex", alignItems: "center", gap: "1px", textDecoration: "none", marginRight: "6px" }}>
-          <span style={{ fontWeight: 900, fontSize: "14px", color: "#3ddc84", letterSpacing: "-0.02em" }}>Debug</span>
-          <span style={{ fontWeight: 900, fontSize: "14px", color: "#e8f0f3", letterSpacing: "-0.02em" }}>Battle</span>
+        <a href="/home" className="mr-1.5 flex items-center gap-px no-underline">
+          <span className="font-display text-sm font-black tracking-tight" style={{ color: ME_COLOR }}>Debug</span>
+          <span className="font-display text-sm font-black tracking-tight text-foreground">Battle</span>
         </a>
 
-        <span style={{
-          fontSize: "10px", fontWeight: 700, color: "#ff5c5c",
-          background: "rgba(255,92,92,0.1)", border: "1px solid rgba(255,92,92,0.3)",
-          padding: "2px 10px", borderRadius: "999px", letterSpacing: "0.08em",
-        }}>
+        <span className="rounded-full border border-signal-security/30 bg-signal-security/10 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-[0.08em] text-signal-security">
           LIVE DUEL
         </span>
 
         {/* My score */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "8px" }}>
-          <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#3ddc84" }} />
-          <span style={{ fontSize: "12px", color: "#8ba0a6" }}>{myName}</span>
-          <span style={{ fontSize: "14px", fontWeight: 800, color: "#3ddc84" }}>{myScore}pts</span>
-          <span style={{ fontSize: "11px", color: "#4a6570" }}>· {cat.label}</span>
+        <div className="ml-2 flex items-center gap-1.5">
+          <div className="h-[7px] w-[7px] rounded-full" style={{ background: ME_COLOR }} />
+          <span className="text-xs text-foreground-muted">{myName}</span>
+          <span className="text-sm font-extrabold" style={{ color: ME_COLOR }}>{myScore}pts</span>
+          <span className="text-[11px] text-foreground-subtle">· {cat.label}</span>
         </div>
 
         {/* VS */}
-        <span style={{ fontSize: "11px", color: "#4a6570", marginLeft: "4px" }}>vs</span>
+        <span className="ml-1 text-[11px] text-foreground-subtle">vs</span>
 
         {/* Opponent score */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#22d3ee" }} />
-          <span style={{ fontSize: "12px", color: "#8ba0a6" }}>{opponent?.displayName ?? "Opponent"}</span>
-          <span style={{ fontSize: "14px", fontWeight: 800, color: "#22d3ee" }}>{opponent?.score ?? 0}pts</span>
-          <span style={{ fontSize: "11px", color: "#4a6570" }}>· {categoryLabel(opponent?.categoryIndex ?? 0)}</span>
+        <div className="flex items-center gap-1.5">
+          <div className="h-[7px] w-[7px] rounded-full bg-signal-ethics" />
+          <span className="text-xs text-foreground-muted">{opponent?.displayName ?? "Opponent"}</span>
+          <span className="text-sm font-extrabold text-signal-ethics">{opponent?.score ?? 0}pts</span>
+          <span className="text-[11px] text-foreground-subtle">· {categoryLabel(opponent?.categoryIndex ?? 0)}</span>
           {opponent?.status === "finished" && (
-            <span style={{ fontSize: "10px", color: "#f5b942", fontWeight: 700 }}>✓ done</span>
+            <span className="text-[10px] font-bold text-signal-performance">✓ done</span>
           )}
         </div>
 
         {/* Spacer */}
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
         {/* Surrender */}
         {!surrenderConfirm ? (
           <button
             onClick={() => setSurrenderConfirm(true)}
-            style={{
-              background: "transparent", border: "1px solid rgba(255,92,92,0.3)",
-              color: "#ff5c5c", cursor: "pointer",
-              padding: "3px 12px", borderRadius: "6px",
-              fontSize: "11px", fontWeight: 700,
-            }}
+            className="cursor-pointer rounded-md border border-signal-security/30 bg-transparent px-3 py-[3px] text-[11px] font-bold text-signal-security"
           >
             Surrender
           </button>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "11px", color: "#ff5c5c", fontWeight: 700 }}>Give up?</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-signal-security">Give up?</span>
             <button
               onClick={handleSurrender}
               disabled={surrendering}
-              style={{
-                background: "#ff5c5c", color: "#0d1117", border: "none",
-                padding: "3px 10px", borderRadius: "5px",
-                fontSize: "11px", fontWeight: 800, cursor: surrendering ? "not-allowed" : "pointer",
-                opacity: surrendering ? 0.6 : 1,
-              }}
+              className="rounded-md border-none bg-signal-security px-2.5 py-[3px] text-[11px] font-extrabold text-background"
+              style={{ cursor: surrendering ? "not-allowed" : "pointer", opacity: surrendering ? 0.6 : 1 }}
             >
               {surrendering ? "…" : "Yes, lose"}
             </button>
             <button
               onClick={() => setSurrenderConfirm(false)}
-              style={{
-                background: "transparent", border: "1px solid rgba(201,214,218,0.15)",
-                color: "#8ba0a6", cursor: "pointer",
-                padding: "3px 10px", borderRadius: "5px",
-                fontSize: "11px", fontWeight: 600,
-              }}
+              className="cursor-pointer rounded-md border border-border-strong bg-transparent px-2.5 py-[3px] text-[11px] font-semibold text-foreground-muted"
             >
               Cancel
             </button>
@@ -501,171 +468,128 @@ export default function LiveDuelClient({
         )}
 
         {/* Timer */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "12px", color: "#4a6570" }}>⏱</span>
-          <span style={{ fontSize: "15px", fontWeight: 800, color: timerColor, fontVariantNumeric: "tabular-nums" }}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-foreground-subtle">⏱</span>
+          <span className="font-mono text-[15px] font-extrabold" style={{ color: timerColor, fontVariantNumeric: "tabular-nums" }}>
             {timeLeft !== null ? formatTime(timeLeft) : "—"}
           </span>
         </div>
 
         {/* Match ID */}
-        <span style={{ fontSize: "10px", color: "#2a3a40", marginLeft: "8px" }}>#{matchId}</span>
+        <span className="ml-2 font-mono text-[10px] text-foreground-subtle">#{matchId}</span>
       </div>
 
       {/* ── Two-panel body ──────────────────────────────────── */}
-      <div style={{
-        position: "relative",
-        padding: "16px 18px 18px",
-        background: "radial-gradient(circle at top, rgba(61,220,132,0.16), transparent 38%), linear-gradient(135deg, #0d1620 0%, #0b1118 58%, #091015 100%)",
-        borderBottom: "1px solid rgba(201,214,218,0.08)",
-        overflow: "hidden",
-        flexShrink: 0,
-      }}>
+      <div
+        className="relative flex-shrink-0 overflow-hidden border-b border-border px-[18px] pb-[18px] pt-4"
+        style={{
+          background: `radial-gradient(circle at top, ${ME_COLOR}29, transparent 38%), linear-gradient(135deg, var(--surface) 0%, var(--background) 58%, var(--background) 100%)`,
+        }}
+      >
         <div
           key={`scoreboard-sheen-${scoreFx.me}-${scoreFx.opponent}`}
+          className="pointer-events-none absolute inset-0"
           style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
             background: "linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.16) 48%, transparent 100%)",
             animation: "duel-scoreboard-sheen 1200ms ease-out",
           }}
         />
 
-        <div style={{ display: "flex", alignItems: "stretch", gap: "14px", position: "relative", zIndex: 1 }}>
+        <div className="relative z-10 flex items-stretch gap-3.5">
           <div
             key={`me-score-${scoreFx.me}`}
+            className="relative flex-1 overflow-hidden rounded-[22px] p-5"
             style={{
-              position: "relative",
-              flex: 1,
-              borderRadius: "22px",
-              padding: "18px 20px",
-              background: "linear-gradient(155deg, rgba(61,220,132,0.18), rgba(8,22,18,0.88))",
-              border: "1px solid rgba(61,220,132,0.28)",
+              background: `linear-gradient(155deg, ${ME_COLOR}2e, color-mix(in oklab, var(--background) 88%, transparent))`,
+              border: `1px solid ${ME_COLOR}48`,
               boxShadow: "0 24px 60px rgba(0,0,0,0.28)",
               animation: scoreFx.me ? "duel-score-surge 760ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined,
-              overflow: "hidden",
             }}
           >
             {scoreDelta.me !== null && (
               <div
                 key={`me-delta-${scoreFx.me}`}
-                style={{
-                  position: "absolute",
-                  top: "16px",
-                  right: "18px",
-                  color: "#7cffb1",
-                  fontSize: "14px",
-                  fontWeight: 900,
-                  letterSpacing: "0.04em",
-                  animation: "duel-score-delta 900ms ease-out forwards",
-                }}
+                className="absolute right-[18px] top-4 text-sm font-black tracking-[0.04em]"
+                style={{ color: ME_COLOR, animation: "duel-score-delta 900ms ease-out forwards" }}
               >
                 +{scoreDelta.me}
               </div>
             )}
             <div
               key={`me-glow-${scoreFx.me}`}
+              className="pointer-events-none absolute rounded-full"
               style={{
-                position: "absolute",
                 inset: "-22%",
-                borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(124,255,177,0.32) 0%, transparent 62%)",
-                pointerEvents: "none",
+                background: `radial-gradient(circle, ${ME_COLOR}52 0%, transparent 62%)`,
                 animation: scoreFx.me ? "duel-score-glow 760ms ease-out" : undefined,
               }}
             />
-            <div style={{ fontSize: "11px", color: "#8fe8b2", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: "10px" }}>
+            <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: ME_COLOR }}>
               You
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
-              <span style={{ fontSize: "60px", fontWeight: 900, color: "#e8fff1", letterSpacing: "-0.06em", lineHeight: 0.95 }}>
+            <div className="flex items-baseline gap-2.5">
+              <span className="font-display text-[60px] font-black leading-[0.95] tracking-[-0.06em] text-foreground">
                 {myScore}
               </span>
-              <span style={{ fontSize: "15px", fontWeight: 700, color: "#8fe8b2" }}>PTS</span>
+              <span className="text-[15px] font-bold" style={{ color: ME_COLOR }}>PTS</span>
             </div>
-            <div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "15px", fontWeight: 800, color: "#e8f0f3" }}>{myName}</span>
-              <span style={{ fontSize: "11px", color: "#8ba0a6" }}>Current: {cat.label}</span>
+            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+              <span className="text-[15px] font-extrabold text-foreground">{myName}</span>
+              <span className="text-[11px] text-foreground-muted">Current: {cat.label}</span>
             </div>
           </div>
 
-          <div style={{
-            width: "124px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "22px",
-            background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-            border: "1px solid rgba(201,214,218,0.08)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-          }}>
-            <div style={{ fontSize: "11px", color: "#4a6570", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "8px" }}>
+          <div className="flex w-[124px] flex-col items-center justify-center rounded-[22px] border border-border bg-surface-2/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
               Duel
             </div>
-            <div style={{ fontSize: "30px", fontWeight: 900, color: "#c9d6da", letterSpacing: "-0.08em", lineHeight: 1 }}>
+            <div className="text-[30px] font-black leading-none tracking-[-0.08em] text-foreground-muted">
               VS
             </div>
-            <div style={{ marginTop: "8px", fontSize: "10px", color: timerColor, fontWeight: 800, letterSpacing: "0.1em" }}>
+            <div className="mt-2 text-[10px] font-extrabold tracking-[0.1em]" style={{ color: timerColor }}>
               {timeLeft !== null ? formatTime(timeLeft) : "—"}
             </div>
           </div>
 
           <div
             key={`opponent-score-${scoreFx.opponent}`}
+            className="relative flex-1 overflow-hidden rounded-[22px] border border-signal-ethics/25 p-5"
             style={{
-              position: "relative",
-              flex: 1,
-              borderRadius: "22px",
-              padding: "18px 20px",
-              background: "linear-gradient(155deg, rgba(34,211,238,0.16), rgba(8,16,24,0.88))",
-              border: "1px solid rgba(34,211,238,0.26)",
+              background: "linear-gradient(155deg, rgba(34,211,238,0.16), color-mix(in oklab, var(--background) 88%, transparent))",
               boxShadow: "0 24px 60px rgba(0,0,0,0.28)",
               animation: scoreFx.opponent ? "duel-score-surge 760ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined,
-              overflow: "hidden",
             }}
           >
             {scoreDelta.opponent !== null && (
               <div
                 key={`opponent-delta-${scoreFx.opponent}`}
-                style={{
-                  position: "absolute",
-                  top: "16px",
-                  right: "18px",
-                  color: "#7ceeff",
-                  fontSize: "14px",
-                  fontWeight: 900,
-                  letterSpacing: "0.04em",
-                  animation: "duel-score-delta 900ms ease-out forwards",
-                }}
+                className="absolute right-[18px] top-4 text-sm font-black tracking-[0.04em] text-signal-ethics"
+                style={{ animation: "duel-score-delta 900ms ease-out forwards" }}
               >
                 +{scoreDelta.opponent}
               </div>
             )}
             <div
               key={`opponent-glow-${scoreFx.opponent}`}
+              className="pointer-events-none absolute rounded-full"
               style={{
-                position: "absolute",
                 inset: "-22%",
-                borderRadius: "50%",
                 background: "radial-gradient(circle, rgba(124,238,255,0.3) 0%, transparent 62%)",
-                pointerEvents: "none",
                 animation: scoreFx.opponent ? "duel-score-glow 760ms ease-out" : undefined,
               }}
             />
-            <div style={{ fontSize: "11px", color: "#84effe", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: "10px" }}>
+            <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.16em] text-signal-ethics">
               Opponent
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
-              <span style={{ fontSize: "60px", fontWeight: 900, color: "#f2fcff", letterSpacing: "-0.06em", lineHeight: 0.95 }}>
+            <div className="flex items-baseline gap-2.5">
+              <span className="font-display text-[60px] font-black leading-[0.95] tracking-[-0.06em] text-foreground">
                 {opponent?.score ?? 0}
               </span>
-              <span style={{ fontSize: "15px", fontWeight: 700, color: "#84effe" }}>PTS</span>
+              <span className="text-[15px] font-bold text-signal-ethics">PTS</span>
             </div>
-            <div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "15px", fontWeight: 800, color: "#e8f0f3" }}>{opponent?.displayName ?? "Opponent"}</span>
-              <span style={{ fontSize: "11px", color: "#8ba0a6" }}>
+            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+              <span className="text-[15px] font-extrabold text-foreground">{opponent?.displayName ?? "Opponent"}</span>
+              <span className="text-[11px] text-foreground-muted">
                 {opponent?.status === "finished" ? "Done ✓" : `Current: ${categoryLabel(opponent?.categoryIndex ?? 0)}`}
               </span>
             </div>
@@ -673,25 +597,20 @@ export default function LiveDuelClient({
         </div>
       </div>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+      <div className="relative flex flex-1 overflow-hidden">
 
         {/* Left — code editor */}
-        <div style={{ width: "60%", display: "flex", flexDirection: "column" }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: "10px",
-            padding: "6px 12px", background: "#161b22",
-            borderBottom: "1px solid #21262d", borderRight: "1px solid #21262d", flexShrink: 0,
-          }}>
+        <div className="flex w-[60%] flex-col">
+          <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-r border-border-strong bg-surface-2 px-3 py-1.5">
             <button
               type="button"
               onClick={handleCheck}
               disabled={checking || selfDone}
+              className="rounded-[5px] border px-4 py-1 text-xs font-bold"
               style={{
-                background: checking || selfDone ? "#161b22" : "#16450a",
-                color: checking || selfDone ? "#484f58" : "#3fb950",
-                border: `1px solid ${checking || selfDone ? "#484f58" : "#3fb950"}`,
-                padding: "4px 16px", borderRadius: "5px",
-                fontSize: "12px", fontWeight: 700,
+                background: checking || selfDone ? "var(--surface-2)" : `${RESULT_COLORS.win}1a`,
+                color: checking || selfDone ? "var(--foreground-subtle)" : RESULT_COLORS.win,
+                borderColor: checking || selfDone ? "var(--border-strong)" : RESULT_COLORS.win,
                 cursor: checking || selfDone ? "not-allowed" : "pointer",
                 opacity: checking ? 0.7 : 1,
               }}
@@ -699,11 +618,11 @@ export default function LiveDuelClient({
               {checking ? "Checking…" : selfDone ? "Finished" : "✓ Check"}
             </button>
             {!selfDone && (
-              <span style={{ fontSize: "11px", color: "#484f58" }}>
+              <span className="text-[11px] text-foreground-subtle">
                 {cat.icon} {cat.label} · {fixedNow.length} / {vulns.length} fixed
               </span>
             )}
-            <span style={{ marginLeft: "auto", fontSize: "11px", color: "#484f58" }}>
+            <span className="ml-auto text-[11px] text-foreground-subtle">
               {challengeSlot} · C++
             </span>
           </div>
@@ -723,43 +642,32 @@ export default function LiveDuelClient({
         </div>
 
         {/* Right — opponent board + category panel */}
-        <div style={{
-          width: "40%", display: "flex", flexDirection: "column",
-          borderLeft: "1px solid #21262d", background: "#161b22", overflow: "hidden",
-        }}>
+        <div className="flex w-[40%] flex-col overflow-hidden border-l border-border-strong bg-surface-2">
 
           {/* Opponent board */}
-          <div style={{
-            padding: "10px 14px", borderBottom: "1px solid #21262d", flexShrink: 0,
-            background: "rgba(34,211,238,0.03)",
-          }}>
-            <div style={{ fontSize: "9px", fontWeight: 700, color: "#22d3ee", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px" }}>
+          <div className="flex-shrink-0 border-b border-border-strong bg-signal-ethics/[0.03] px-3.5 py-2.5">
+            <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.12em] text-signal-ethics">
               Opponent
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <div style={{
-                  width: "28px", height: "28px", borderRadius: "50%",
-                  background: "rgba(34,211,238,0.1)", border: "1.5px solid rgba(34,211,238,0.4)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "12px", fontWeight: 900, color: "#22d3ee",
-                }}>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full border-[1.5px] border-signal-ethics/40 bg-signal-ethics/10 text-xs font-black text-signal-ethics">
                   {(opponent?.displayName ?? "?")[0].toUpperCase()}
                 </div>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#e8f0f3" }}>
+                <span className="text-[13px] font-bold text-foreground">
                   {opponent?.displayName ?? "Opponent"}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: "16px", marginLeft: "auto" }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "18px", fontWeight: 900, color: "#22d3ee" }}>{opponent?.score ?? 0}</div>
-                  <div style={{ fontSize: "9px", color: "#4a6570", textTransform: "uppercase", letterSpacing: "0.08em" }}>Score</div>
+              <div className="ml-auto flex gap-4">
+                <div className="text-center">
+                  <div className="text-lg font-black text-signal-ethics">{opponent?.score ?? 0}</div>
+                  <div className="text-[9px] uppercase tracking-[0.08em] text-foreground-subtle">Score</div>
                 </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#e8f0f3" }}>
+                <div className="text-center">
+                  <div className="text-xs font-bold text-foreground">
                     {opponent?.status === "finished" ? "Done ✓" : categoryLabel(opponent?.categoryIndex ?? 0)}
                   </div>
-                  <div style={{ fontSize: "9px", color: "#4a6570", textTransform: "uppercase", letterSpacing: "0.08em" }}>Category</div>
+                  <div className="text-[9px] uppercase tracking-[0.08em] text-foreground-subtle">Category</div>
                 </div>
               </div>
             </div>
@@ -767,65 +675,56 @@ export default function LiveDuelClient({
 
           {/* Self-done waiting state */}
           {waitingOverlay ? (
-            <div style={{
-              flex: 1, display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: "16px", padding: "24px",
-            }}>
-              <div style={{ fontSize: "32px" }}>⏳</div>
-              <p style={{ fontSize: "14px", fontWeight: 700, color: "#e8f0f3", margin: 0 }}>
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+              <div className="text-[32px]">⏳</div>
+              <p className="m-0 text-sm font-bold text-foreground">
                 You finished all categories!
               </p>
-              <p style={{ fontSize: "12px", color: "#4a6570", margin: 0, textAlign: "center" }}>
+              <p className="m-0 text-center text-xs text-foreground-subtle">
                 Waiting for opponent to finish…
               </p>
-              <div style={{
-                background: "rgba(61,220,132,0.06)", border: "1px solid rgba(61,220,132,0.15)",
-                borderRadius: "8px", padding: "12px 20px", textAlign: "center",
-              }}>
-                <div style={{ fontSize: "10px", color: "#4a6570", marginBottom: "4px" }}>Your final score</div>
-                <div style={{ fontSize: "28px", fontWeight: 900, color: "#3ddc84" }}>{myScore}</div>
+              <div
+                className="rounded-lg px-5 py-3 text-center"
+                style={{ background: `${ME_COLOR}0f`, border: `1px solid ${ME_COLOR}26` }}
+              >
+                <div className="mb-1 text-[10px] text-foreground-subtle">Your final score</div>
+                <div className="text-[28px] font-black" style={{ color: ME_COLOR }}>{myScore}</div>
               </div>
             </div>
           ) : (
             /* Category panel */
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div className="flex flex-1 flex-col overflow-hidden">
 
               {/* Category header */}
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #21262d", flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "8px" }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: "15px", fontWeight: 800, color: "#e8f0f3" }}>
+              <div className="flex-shrink-0 border-b border-border-strong px-3.5 py-2.5">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[15px] font-extrabold text-foreground">
                       {cat.icon} {cat.label}
                     </div>
-                    <div style={{ fontSize: "10px", color: viewingEarlierCategory ? "#f5b942" : "#4a6570", marginTop: "3px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    <div
+                      className="mt-[3px] text-[10px] uppercase tracking-[0.08em]"
+                      style={{ color: viewingEarlierCategory ? "var(--signal-performance)" : "var(--foreground-subtle)" }}
+                    >
                       {viewingEarlierCategory ? "Reviewing previous category" : "Live category"}
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                    <span style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: fixedNow.length === vulns.length ? "#3fb950" : "#58a6ff",
-                      background: "#0d1117",
-                      padding: "3px 10px",
-                      borderRadius: "999px",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                    }}>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <span
+                      className="rounded-full border border-white/5 bg-background px-2.5 py-[3px] text-xs font-bold"
+                      style={{ color: fixedNow.length === vulns.length ? RESULT_COLORS.win : "#58a6ff" }}
+                    >
                       {fixedNow.length} / {vulns.length}
                     </span>
                     <button
                       type="button"
                       onClick={handlePrevious}
                       disabled={catIdx === 0 || advancing}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold"
                       style={{
-                        background: catIdx === 0 || advancing ? "#11161d" : "#1d2630",
-                        color: catIdx === 0 || advancing ? "#55626d" : "#c9d6da",
-                        border: "1px solid rgba(201,214,218,0.12)",
-                        padding: "6px 12px",
-                        borderRadius: "8px",
+                        background: catIdx === 0 || advancing ? "var(--surface)" : "var(--surface-raised)",
+                        color: catIdx === 0 || advancing ? "var(--foreground-subtle)" : "var(--foreground-muted)",
                         cursor: catIdx === 0 || advancing ? "not-allowed" : "pointer",
-                        fontSize: "12px",
-                        fontWeight: 700,
                         opacity: catIdx === 0 || advancing ? 0.65 : 1,
                       }}
                     >
@@ -835,15 +734,10 @@ export default function LiveDuelClient({
                       type="button"
                       onClick={handleNext}
                       disabled={advancing}
+                      className="rounded-lg border-none px-3.5 py-1.5 text-xs font-extrabold text-white"
                       style={{
-                        background: "linear-gradient(135deg, #ff5c5c, #e94560)",
-                        color: "#fff",
-                        border: "none",
-                        padding: "6px 14px",
-                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, var(--signal-security), #e94560)",
                         cursor: advancing ? "not-allowed" : "pointer",
-                        fontSize: "12px",
-                        fontWeight: 800,
                         opacity: advancing ? 0.6 : 1,
                         boxShadow: advancing ? "none" : "0 12px 24px rgba(233,69,96,0.25)",
                       }}
@@ -854,17 +748,15 @@ export default function LiveDuelClient({
                 </div>
 
                 {/* Progress dots */}
-                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                <div className="flex items-center gap-1.5">
                   {CATEGORIES.map((c, i) => (
                     <div
                       key={c.key}
+                      className="flex-1 rounded-full transition-all duration-[180ms]"
                       style={{
-                        flex: 1,
                         height: i === catIdx ? "8px" : "4px",
-                        borderRadius: "999px",
-                        background: i < unlockedCatIdx ? "#3ddc84" : i === unlockedCatIdx ? c.color : "#21262d",
+                        background: i < unlockedCatIdx ? RESULT_COLORS.win : i === unlockedCatIdx ? c.color : "var(--surface-2)",
                         boxShadow: i === catIdx ? `0 0 0 1px ${c.color}55, 0 0 18px ${c.color}44` : "none",
-                        transition: "all 180ms ease",
                       }}
                     />
                   ))}
@@ -873,13 +765,14 @@ export default function LiveDuelClient({
 
               {/* Check result banner */}
               {result && (
-                <div style={{
-                  margin: "8px 14px 0", padding: "7px 12px", borderRadius: "7px",
-                  fontSize: "12px", lineHeight: 1.5, flexShrink: 0,
-                  background: result.error ? "#3b0d0d" : result.newCount > 0 ? "#0a2d0a" : "#1a1a0a",
-                  border: `1px solid ${result.error ? "#6e1414" : result.newCount > 0 ? "#3fb950" : "#4a5a0a"}`,
-                  color: result.error ? "#fca5a5" : result.newCount > 0 ? "#3fb950" : "#d29922",
-                }}>
+                <div
+                  className="mx-3.5 mt-2 flex-shrink-0 rounded-md px-3 py-1.5 text-xs leading-relaxed"
+                  style={{
+                    background: result.error ? "rgba(255,59,92,0.08)" : result.newCount > 0 ? `${RESULT_COLORS.win}12` : "rgba(255,176,32,0.06)",
+                    border: `1px solid ${result.error ? "var(--signal-security)" : result.newCount > 0 ? RESULT_COLORS.win : "var(--signal-performance)"}`,
+                    color: result.error ? "#fca5a5" : result.newCount > 0 ? RESULT_COLORS.win : "var(--signal-performance)",
+                  }}
+                >
                   {result.error
                     ? result.error
                     : result.newCount > 0
@@ -889,11 +782,8 @@ export default function LiveDuelClient({
               )}
 
               {/* Vulnerability list */}
-              <div style={{ flex: 1, overflowY: "auto", paddingTop: "6px" }}>
-                <p style={{
-                  margin: "4px 14px 6px", fontSize: "10px", fontWeight: 700,
-                  textTransform: "uppercase", letterSpacing: "0.12em", color: "#484f58",
-                }}>
+              <div className="flex-1 overflow-y-auto pt-1.5">
+                <p className="mx-3.5 mb-1.5 mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground-subtle">
                   Vulnerabilities to fix
                 </p>
                 {vulns.map((vuln, i) => (
@@ -918,32 +808,33 @@ export default function LiveDuelClient({
 // ── Vuln item ─────────────────────────────────────────────────
 function VulnItem({ vuln, index, fixed, hintOpen, onToggleHint }) {
   return (
-    <div style={{
-      padding: "10px 14px", borderBottom: "1px solid #21262d",
-      background: fixed ? "#071a07" : "transparent", transition: "background 0.2s",
-    }}>
-      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-        <div style={{
-          width: "16px", height: "16px", borderRadius: "50%", flexShrink: 0, marginTop: "2px",
-          border: fixed ? "none" : "2px solid #484f58",
-          background: fixed ? "#3fb950" : "transparent",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {fixed && <span style={{ color: "#fff", fontSize: "10px", lineHeight: 1 }}>✓</span>}
+    <div
+      className="border-b border-border-strong px-3.5 py-2.5 transition-colors"
+      style={{ background: fixed ? `${RESULT_COLORS.win}0d` : "transparent" }}
+    >
+      <div className="flex items-start gap-2.5">
+        <div
+          className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
+          style={{
+            border: fixed ? "none" : "2px solid var(--foreground-subtle)",
+            background: fixed ? RESULT_COLORS.win : "transparent",
+          }}
+        >
+          {fixed && <span className="text-[10px] leading-none text-background">✓</span>}
         </div>
-        <div style={{ flex: 1 }}>
-          <p style={{ margin: "0 0 5px", fontSize: "11.5px", lineHeight: 1.65, color: fixed ? "#3fb950" : "#c9d1d9" }}>
+        <div className="flex-1">
+          <p className="m-0 mb-1.5 text-[11.5px] leading-relaxed" style={{ color: fixed ? RESULT_COLORS.win : "var(--foreground)" }}>
             {vuln.Description}
           </p>
           <button
             type="button"
             onClick={() => onToggleHint(index)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "11px", color: "#58a6ff", padding: 0, textDecoration: "underline" }}
+            className="cursor-pointer border-none bg-none p-0 text-[11px] text-signal-ethics underline"
           >
             {hintOpen ? "Hide hint" : "Show hint"}
           </button>
           {hintOpen && (
-            <p style={{ margin: "5px 0 0", fontSize: "11px", lineHeight: 1.55, color: "#d29922", fontStyle: "italic" }}>
+            <p className="m-0 mt-1.5 text-[11px] italic leading-snug text-signal-performance">
               {vuln.Hint}
             </p>
           )}

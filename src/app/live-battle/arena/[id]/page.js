@@ -51,7 +51,7 @@ export default async function ArenaPage({ params }) {
   const { challengeSlot, challengeData, ...matchMeta } = state;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "#0d1117" }}>
+    <div className="flex h-screen flex-col overflow-hidden bg-background font-sans">
       <HeartbeatClient />
       <LiveDuelClient
         matchId={matchId}

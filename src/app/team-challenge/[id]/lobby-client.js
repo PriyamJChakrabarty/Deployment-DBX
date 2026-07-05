@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { COLORS } from "@/lib/theme";
 
 // ── Animations ────────────────────────────────────────────────────
 const KEYFRAMES = `
@@ -10,12 +11,12 @@ const KEYFRAMES = `
   to   { transform: translateY(0);    opacity: 1; }
 }
 @keyframes tc-vs-pulse {
-  0%,100% { transform: scale(1);    text-shadow: 0 0 0 rgba(245,185,66,0); }
-  50%      { transform: scale(1.1); text-shadow: 0 0 28px rgba(245,185,66,0.5); }
+  0%,100% { transform: scale(1);    text-shadow: 0 0 0 transparent; }
+  50%      { transform: scale(1.1); text-shadow: 0 0 28px color-mix(in oklab, var(--signal-performance) 50%, transparent); }
 }
 @keyframes tc-ready-glow {
-  0%,100% { box-shadow: 0 0 0 rgba(245,185,66,0); }
-  50%      { box-shadow: 0 0 24px rgba(245,185,66,0.4); }
+  0%,100% { box-shadow: 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 24px color-mix(in oklab, var(--signal-performance) 40%, transparent); }
 }
 @keyframes tc-pulse-ring {
   0%   { transform: scale(0.9); opacity: 1; }
@@ -33,21 +34,26 @@ const KEYFRAMES = `
 }
 `;
 
+// Raw hex mirrors of the design-system tokens — kept as plain hex (not CSS
+// vars) so the `${color}NN` alpha-suffix trick used throughout this file
+// keeps working for genuinely per-side/per-state dynamic accents.
 const C = {
-  bg:         "#0d1a1f",
-  panel:      "#0a1419",
-  card:       "#0e1f27",
-  border:     "rgba(201,214,218,0.07)",
-  green:      "#3ddc84",
-  cyan:       "#22d3ee",
-  gold:       "#f5b942",
-  red:        "#ef4444",
-  text:       "#e8f0f3",
-  sub:        "#8ba0a6",
-  muted:      "#4a6570",
+  bg:     COLORS.background,        // canvas
+  panel:  COLORS.surface,            // chrome bars
+  border: COLORS.border,
+  green:  "#2dd881",                 // signal-scalability
+  cyan:   "#22d3ee",                 // signal-ethics
+  gold:   "#ffb020",                 // signal-performance
+  red:    "#ff3b5c",                 // signal-security
+  brand:  COLORS.brand,
+  text:   COLORS.foreground,
+  sub:    COLORS.foregroundMuted,
+  muted:  COLORS.foregroundSubtle,
 };
 
-const SIDE_COLOR = { challenger: C.green, challengee: C.cyan };
+// Two competing teams get distinct identity colors, mirroring home-client's
+// RaidRow TEAM_COLORS = [COLORS.brand, "#22d3ee"] for two-team displays.
+const SIDE_COLOR = { challenger: C.brand, challengee: C.cyan };
 
 const ROLE_LABEL = { captain: "Captain", vice_captain: "VC", member: "" };
 
@@ -76,11 +82,13 @@ function Countdown({ expiresAt }) {
   if (rem === null) return null;
   const urgent = rem < 60;
   return (
-    <span style={{
-      fontSize: 13, fontWeight: 800, fontVariantNumeric: "tabular-nums",
-      color: urgent ? C.red : C.muted,
-      animation: urgent ? "tc-shake 0.6s ease infinite" : "none",
-    }}>
+    <span
+      className="font-mono text-[13px] font-extrabold tabular-nums"
+      style={{
+        color: urgent ? C.red : C.muted,
+        animation: urgent ? "tc-shake 0.6s ease infinite" : "none",
+      }}
+    >
       ⏱ {Math.floor(rem / 60)}:{String(rem % 60).padStart(2, "0")}
     </span>
   );
@@ -91,72 +99,65 @@ function MemberCard({ member, color, roleLabel }) {
   const { displayName, present } = member;
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "9px 14px", borderRadius: 10,
-      background: present ? `${color}08` : "rgba(201,214,218,0.02)",
-      border: `1px solid ${present ? `${color}22` : C.border}`,
-      transition: "all 0.3s",
-    }}>
+    <div
+      className="flex items-center gap-2.5 rounded-[10px] border px-3.5 py-2.5 transition-all duration-300"
+      style={{
+        background: present ? `${color}08` : "rgba(148,163,184,0.02)",
+        borderColor: present ? `${color}22` : C.border,
+      }}
+    >
       {/* Avatar */}
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${color}22, ${color}08)`,
-          border: `1.5px solid ${present ? color : "rgba(201,214,218,0.12)"}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 14, fontWeight: 900,
-          color: present ? color : C.muted,
-          transition: "all 0.3s",
-        }}>
+      <div className="relative flex-shrink-0">
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-black transition-all duration-300"
+          style={{
+            background: `linear-gradient(135deg, ${color}22, ${color}08)`,
+            border: `1.5px solid ${present ? color : "rgba(148,163,184,0.12)"}`,
+            color: present ? color : C.muted,
+          }}
+        >
           {(displayName || "?")[0].toUpperCase()}
         </div>
         {/* presence dot */}
-        <div style={{
-          position: "absolute", bottom: 1, right: 1,
-          width: 10, height: 10, borderRadius: "50%",
-          background: present ? color : "rgba(201,214,218,0.18)",
-          border: `1.5px solid ${C.bg}`,
-          transition: "background 0.3s",
-          boxShadow: present ? `0 0 6px ${color}80` : "none",
-        }} />
+        <div
+          className="absolute bottom-[1px] right-[1px] h-2.5 w-2.5 rounded-full transition-colors duration-300"
+          style={{
+            background: present ? color : "rgba(148,163,184,0.18)",
+            border: `1.5px solid ${C.bg}`,
+            boxShadow: present ? `0 0 6px ${color}80` : "none",
+          }}
+        />
         {present && (
-          <div style={{
-            position: "absolute", bottom: 1, right: 1,
-            width: 10, height: 10, borderRadius: "50%",
-            background: color,
-            animation: "tc-pulse-ring 1.5s ease-out infinite",
-          }} />
+          <div
+            className="absolute bottom-[1px] right-[1px] h-2.5 w-2.5 rounded-full"
+            style={{ background: color, animation: "tc-pulse-ring 1.5s ease-out infinite" }}
+          />
         )}
       </div>
 
       {/* Name + role */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 13, fontWeight: 700,
-          color: present ? C.text : C.sub,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          transition: "color 0.3s",
-        }}>
+      <div className="min-w-0 flex-1">
+        <div
+          className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold transition-colors duration-300"
+          style={{ color: present ? C.text : C.sub }}
+        >
           {displayName}
         </div>
         {roleLabel && (
-          <div style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.07em",
-            color: color, textTransform: "uppercase", marginTop: 1,
-            animation: "tc-badge-pop 0.3s ease forwards",
-          }}>
+          <div
+            className="mt-px font-mono text-[10px] font-bold uppercase tracking-[0.07em]"
+            style={{ color, animation: "tc-badge-pop 0.3s ease forwards" }}
+          >
             {roleLabel}
           </div>
         )}
       </div>
 
       {/* Status */}
-      <div style={{
-        fontSize: 11, fontWeight: 700, flexShrink: 0,
-        color: present ? color : C.muted,
-        letterSpacing: "0.06em", textTransform: "uppercase",
-      }}>
+      <div
+        className="flex-shrink-0 font-mono text-[11px] font-bold uppercase tracking-[0.06em]"
+        style={{ color: present ? color : C.muted }}
+      >
         {present ? "In Lobby" : "Waiting…"}
       </div>
     </div>
@@ -171,38 +172,33 @@ function TeamPanel({ teamName, teamEmoji, members, side, captainId, isCaptain, m
   const presentN  = members.filter((m) => m.present).length;
 
   return (
-    <div style={{
-      flex: 1, display: "flex", flexDirection: "column", overflow: "hidden",
-      borderRight: side === "challenger" ? `1px solid ${C.border}` : "none",
-      borderLeft:  side === "challengee" ? `1px solid ${C.border}` : "none",
-      background: `linear-gradient(180deg, ${color}06 0%, transparent 60%)`,
-      animation: "tc-rise 0.4s ease both",
-    }}>
+    <div
+      className={`flex flex-1 flex-col overflow-hidden border-border ${side === "challenger" ? "border-r" : "border-l"}`}
+      style={{
+        background: `linear-gradient(180deg, ${color}06 0%, transparent 60%)`,
+        animation: "tc-rise 0.4s ease both",
+      }}
+    >
       {/* Team header */}
-      <div style={{
-        padding: "24px 24px 16px",
-        borderBottom: `1px solid ${C.border}`,
-        textAlign: "center",
-      }}>
-        <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 10 }}>{teamEmoji}</div>
-        <div style={{ fontSize: 17, fontWeight: 900, color: C.text, marginBottom: 6, letterSpacing: "-0.01em" }}>
+      <div className="border-b border-border px-6 pb-4 pt-6 text-center">
+        <div className="mb-2.5 text-[44px] leading-none">{teamEmoji}</div>
+        <div className="mb-1.5 font-display text-[17px] font-bold tracking-tight text-foreground">
           {teamName}
         </div>
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          fontSize: 11, fontWeight: 700, color: allHere && challengeStatus === "accepted" ? color : C.muted,
-          letterSpacing: "0.07em", textTransform: "uppercase",
-        }}>
-          <span style={{
-            display: "inline-block", width: 6, height: 6, borderRadius: "50%",
-            background: allHere && challengeStatus === "accepted" ? color : C.muted,
-          }} />
+        <div
+          className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.07em]"
+          style={{ color: allHere && challengeStatus === "accepted" ? color : C.muted }}
+        >
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ background: allHere && challengeStatus === "accepted" ? color : C.muted }}
+          />
           {presentN} / {members.length} in lobby
         </div>
       </div>
 
       {/* Member list */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-4 py-3.5">
         {members.map((m) => {
           const roleLabel = m.clerkId === captainId ? "Captain" : ROLE_LABEL[m.role] ?? "";
           return (
@@ -217,33 +213,20 @@ function TeamPanel({ teamName, teamEmoji, members, side, captainId, isCaptain, m
       </div>
 
       {/* Ready / Accept-Reject footer */}
-      <div style={{ padding: "16px 20px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+      <div className="flex-shrink-0 border-t border-border px-5 py-4">
 
         {/* Challengee captain pending: Accept / Reject */}
         {side === "challengee" && challengeStatus === "pending" && isCaptain && mySide === "challengee" && (
-          <div style={{ display: "flex", gap: 8 }}>
+          <div className="flex gap-2">
             <button
               onClick={onAccept}
-              style={{
-                flex: 1, background: C.green, color: "#0d1a1f",
-                border: "none", borderRadius: 10, padding: "11px 0",
-                fontSize: 13, fontWeight: 900, cursor: "pointer",
-                letterSpacing: "0.04em",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+              className="flex-1 rounded-[10px] bg-signal-scalability py-2.5 text-[13px] font-black tracking-[0.04em] text-background hover:brightness-90"
             >
               ✓ Accept
             </button>
             <button
               onClick={onReject}
-              style={{
-                flex: 1, background: "transparent", color: C.red,
-                border: `1px solid rgba(239,68,68,0.3)`, borderRadius: 10,
-                padding: "11px 0", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              className="flex-1 rounded-[10px] border border-signal-security/30 py-2.5 text-[13px] font-bold text-signal-security hover:bg-signal-security/10"
             >
               ✕ Decline
             </button>
@@ -252,13 +235,12 @@ function TeamPanel({ teamName, teamEmoji, members, side, captainId, isCaptain, m
 
         {/* Ready button */}
         {challengeStatus === "accepted" && mySide === side && (
-          <div style={{ position: "relative" }}>
+          <div className="relative">
             {canReady && (
-              <div style={{
-                position: "absolute", inset: -3, borderRadius: 13,
-                animation: "tc-ready-glow 1.4s ease infinite",
-                pointerEvents: "none",
-              }} />
+              <div
+                className="pointer-events-none absolute -inset-[3px] rounded-[13px]"
+                style={{ animation: "tc-ready-glow 1.4s ease infinite" }}
+              />
             )}
             <button
               onClick={onReady}
@@ -268,24 +250,18 @@ function TeamPanel({ teamName, teamEmoji, members, side, captainId, isCaptain, m
                 mySide !== side ? "" :
                 !allHere       ? "Wait for all team members to join" : ""
               }
-              style={{
-                width: "100%", padding: "12px 0",
-                background: isReady ? "rgba(61,220,132,0.15)" :
-                            canReady ? C.gold : "rgba(201,214,218,0.05)",
-                color:  isReady ? C.green :
-                        canReady ? "#0d1a1f" : C.muted,
-                border: isReady ? `1.5px solid ${C.green}` :
-                        canReady ? "none" : `1px solid ${C.border}`,
-                borderRadius: 10, fontSize: 14, fontWeight: 900,
-                cursor: canReady && !isReadying ? "pointer" : "not-allowed",
-                letterSpacing: "0.06em",
-                transition: "all 0.2s",
-              }}
+              className={`w-full rounded-[10px] py-3 text-sm font-black tracking-[0.06em] transition-all duration-200 ${
+                isReady
+                  ? "cursor-not-allowed border-[1.5px] border-signal-scalability bg-signal-scalability/15 text-signal-scalability"
+                  : canReady
+                  ? `bg-signal-performance text-background ${isReadying ? "cursor-not-allowed" : "cursor-pointer"}`
+                  : "cursor-not-allowed border border-border bg-foreground/[0.05] text-foreground-subtle"
+              }`}
             >
               {isReady ? "✓ READY" : isReadying ? "…" : isCaptain ? "⚔ READY" : "⚔ READY (Captain only)"}
             </button>
             {!allHere && challengeStatus === "accepted" && isCaptain && mySide === side && (
-              <div style={{ fontSize: 11, color: C.muted, textAlign: "center", marginTop: 6 }}>
+              <div className="mt-1.5 text-center text-[11px] text-foreground-subtle">
                 Waiting for {members.filter((m) => !m.present).length} more member{members.filter((m) => !m.present).length > 1 ? "s" : ""}…
               </div>
             )}
@@ -294,14 +270,14 @@ function TeamPanel({ teamName, teamEmoji, members, side, captainId, isCaptain, m
 
         {/* Pending + challenger side */}
         {challengeStatus === "pending" && side === "challenger" && mySide === "challenger" && (
-          <div style={{ fontSize: 12, color: C.muted, textAlign: "center", fontStyle: "italic" }}>
+          <div className="text-center text-xs italic text-foreground-subtle">
             Waiting for opponents to accept…
           </div>
         )}
 
         {/* Pending + non-captain challengee */}
         {challengeStatus === "pending" && side === "challengee" && (!isCaptain || mySide !== "challengee") && (
-          <div style={{ fontSize: 12, color: C.muted, textAlign: "center", fontStyle: "italic" }}>
+          <div className="text-center text-xs italic text-foreground-subtle">
             Captain deciding…
           </div>
         )}
@@ -397,40 +373,38 @@ export default function LobbyClient({ challengeId, myClerkId, mySide, isCaptain,
   return (
     <>
       <style>{KEYFRAMES}</style>
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column", overflow: "hidden",
-        background: C.bg,
-        backgroundImage: [
-          "linear-gradient(rgba(201,214,218,0.018) 1px, transparent 1px)",
-          "linear-gradient(90deg, rgba(201,214,218,0.018) 1px, transparent 1px)",
-        ].join(", "),
-        backgroundSize: "48px 48px",
-        position: "relative",
-      }}>
+      <div
+        className="relative flex flex-1 flex-col overflow-hidden bg-background"
+        style={{
+          backgroundImage: [
+            "linear-gradient(rgba(148,163,184,0.018) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(148,163,184,0.018) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+        }}
+      >
 
         {/* Ambient glow when accepted */}
         {ch.status === "accepted" && (
-          <div style={{
-            position: "absolute", inset: 0, pointerEvents: "none",
-            background: "radial-gradient(ellipse 70% 30% at 50% 0%, rgba(245,185,66,0.04) 0%, transparent 60%)",
-          }} />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ background: "radial-gradient(ellipse 70% 30% at 50% 0%, color-mix(in oklab, var(--signal-performance) 4%, transparent) 0%, transparent 60%)" }}
+          />
         )}
 
         {/* ── Top bar ── */}
-        <div style={{
-          padding: "14px 28px", borderBottom: `1px solid ${C.border}`,
-          background: C.panel, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          animation: "tc-rise 0.35s ease both",
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: C.gold, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+        <div
+          className="flex flex-shrink-0 items-center justify-between border-b border-border bg-surface px-7 py-3.5"
+          style={{ animation: "tc-rise 0.35s ease both" }}
+        >
+          <div className="font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-signal-performance">
             ⚔️  Team Challenge
           </div>
           <Countdown expiresAt={ch.expiresAt} />
         </div>
 
         {/* ── Main arena ── */}
-        <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        <div className="flex flex-1 overflow-hidden">
 
           {/* Challenger panel */}
           <TeamPanel
@@ -450,55 +424,44 @@ export default function LobbyClient({ challengeId, myClerkId, mySide, isCaptain,
           />
 
           {/* Center VS column */}
-          <div style={{
-            width: 130, flexShrink: 0,
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            gap: 20, padding: "0 8px",
-            borderLeft: `1px solid ${C.border}`,
-            borderRight: `1px solid ${C.border}`,
-            background: "rgba(245,185,66,0.02)",
-          }}>
+          <div className="flex w-[130px] flex-shrink-0 flex-col items-center justify-center gap-5 border-x border-border bg-signal-performance/[0.02] px-2">
 
             {/* VS */}
-            <div style={{
-              fontSize: 32, fontWeight: 900, color: C.gold,
-              letterSpacing: "-0.02em",
-              animation: ch.status === "accepted" ? "tc-vs-pulse 2s ease infinite" : "none",
-            }}>
+            <div
+              className="font-display text-[32px] font-black tracking-[-0.02em] text-signal-performance"
+              style={{ animation: ch.status === "accepted" ? "tc-vs-pulse 2s ease infinite" : "none" }}
+            >
               VS
             </div>
 
             {/* Ready indicators */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%" }}>
-              <div style={{
-                fontSize: 10, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase",
-                color: ch.challengerReady ? C.green : C.muted,
-                padding: "4px 10px", borderRadius: 20,
-                background: ch.challengerReady ? "rgba(61,220,132,0.12)" : "rgba(201,214,218,0.04)",
-                border: `1px solid ${ch.challengerReady ? "rgba(61,220,132,0.3)" : C.border}`,
-                transition: "all 0.3s", textAlign: "center", width: "100%", boxSizing: "border-box",
-              }}>
+            <div className="flex w-full flex-col items-center gap-2">
+              <div
+                className={`box-border w-full rounded-full py-1 text-center font-mono text-[10px] font-extrabold uppercase tracking-[0.07em] transition-all duration-300 ${
+                  ch.challengerReady
+                    ? "border border-brand/30 bg-brand-dim text-brand"
+                    : "border border-border bg-foreground/[0.04] text-foreground-subtle"
+                }`}
+              >
                 {ch.challengerReady ? "✓ Ready" : "Not Ready"}
               </div>
-              <div style={{ width: 1, height: 10, background: C.border }} />
-              <div style={{
-                fontSize: 10, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase",
-                color: ch.challengeeReady ? C.cyan : C.muted,
-                padding: "4px 10px", borderRadius: 20,
-                background: ch.challengeeReady ? "rgba(34,211,238,0.12)" : "rgba(201,214,218,0.04)",
-                border: `1px solid ${ch.challengeeReady ? "rgba(34,211,238,0.3)" : C.border}`,
-                transition: "all 0.3s", textAlign: "center", width: "100%", boxSizing: "border-box",
-              }}>
+              <div className="h-2.5 w-px bg-border" />
+              <div
+                className={`box-border w-full rounded-full py-1 text-center font-mono text-[10px] font-extrabold uppercase tracking-[0.07em] transition-all duration-300 ${
+                  ch.challengeeReady
+                    ? "border border-signal-ethics/30 bg-signal-ethics/10 text-signal-ethics"
+                    : "border border-border bg-foreground/[0.04] text-foreground-subtle"
+                }`}
+              >
                 {ch.challengeeReady ? "✓ Ready" : "Not Ready"}
               </div>
             </div>
 
             {/* Status message */}
-            <div style={{
-              fontSize: 11, color: meta.color, fontWeight: 700,
-              textAlign: "center", lineHeight: 1.5, letterSpacing: "0.03em",
-            }}>
+            <div
+              className="text-center text-[11px] font-bold leading-relaxed tracking-[0.03em]"
+              style={{ color: meta.color }}
+            >
               {meta.msg}
             </div>
           </div>
@@ -522,28 +485,18 @@ export default function LobbyClient({ challengeId, myClerkId, mySide, isCaptain,
         </div>
 
         {/* ── Bottom bar ── */}
-        <div style={{
-          padding: "12px 24px", borderTop: `1px solid ${C.border}`,
-          background: C.panel, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
-          animation: "tc-rise 0.45s ease 0.1s both",
-        }}>
+        <div
+          className="flex flex-shrink-0 items-center justify-center gap-4 border-t border-border bg-surface px-6 py-3"
+          style={{ animation: "tc-rise 0.45s ease 0.1s both" }}
+        >
           {readyErr && (
-            <div style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>{readyErr}</div>
+            <div className="text-xs font-semibold text-signal-security">{readyErr}</div>
           )}
 
           {isActive && (
             <button
               onClick={handleCancel}
-              style={{
-                background: "transparent", color: C.red,
-                border: `1px solid rgba(239,68,68,0.25)`,
-                borderRadius: 8, padding: "8px 24px",
-                fontSize: 13, fontWeight: 700, cursor: "pointer",
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; }}
+              className="rounded-lg border border-signal-security/25 px-6 py-2 text-[13px] font-bold text-signal-security transition-all duration-150 hover:border-signal-security/50 hover:bg-signal-security/10"
             >
               {mySide === "challenger" ? "Cancel Challenge" : "Leave Lobby"}
             </button>
@@ -551,17 +504,12 @@ export default function LobbyClient({ challengeId, myClerkId, mySide, isCaptain,
 
           {isDead && (
             <>
-              <div style={{ fontSize: 28 }}>
+              <div className="text-[28px]">
                 {ch.status === "rejected" ? "🚫" : ch.status === "expired" ? "⏰" : "💔"}
               </div>
               <button
                 onClick={() => router.replace("/social")}
-                style={{
-                  background: C.gold, color: "#0d1a1f",
-                  border: "none", borderRadius: 9,
-                  padding: "10px 28px", fontSize: 14, fontWeight: 800,
-                  cursor: "pointer",
-                }}
+                className="rounded-[9px] bg-signal-performance px-7 py-2.5 text-sm font-extrabold text-background"
               >
                 Back to Social
               </button>

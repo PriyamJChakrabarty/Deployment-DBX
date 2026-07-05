@@ -153,23 +153,16 @@ export default function RaidNotificationBell() {
     <>
       <style>{KEYFRAMES}</style>
 
-      <div ref={wrapperRef} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+      <div ref={wrapperRef} className="relative flex items-center">
         {/* Bell button */}
         <button
           onClick={() => setIsOpen((o) => !o)}
-          style={{
-            background: "none", border: "none", cursor: "pointer",
-            padding: "6px 8px", borderRadius: "8px", position: "relative",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,185,66,0.1)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+          className="relative flex items-center justify-center rounded-lg px-2 py-1.5 transition-colors hover:bg-signal-performance/10"
           title="Raid Invitations"
         >
           <svg
             width="18" height="18" viewBox="0 0 24 24" fill="none"
-            stroke={count > 0 ? "#f5b942" : "#6b7280"}
+            stroke={count > 0 ? "#ffb020" : "#6b7280"}
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             style={{ animation: ringing ? "bell-ring 0.7s ease" : "none", display: "block" }}
           >
@@ -178,15 +171,10 @@ export default function RaidNotificationBell() {
           </svg>
 
           {count > 0 && (
-            <span style={{
-              position: "absolute", top: "3px", right: "3px",
-              background: "#ef4444", color: "#fff",
-              fontSize: "9px", fontWeight: 800,
-              width: "15px", height: "15px", borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              lineHeight: 1, border: "1.5px solid #0d1a1f",
-              animation: "badge-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards",
-            }}>
+            <span
+              className="absolute right-[3px] top-[3px] flex h-[15px] w-[15px] items-center justify-center rounded-full border-[1.5px] border-background bg-signal-security text-[9px] font-extrabold leading-none text-white"
+              style={{ animation: "badge-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards" }}
+            >
               {count > 9 ? "9+" : count}
             </span>
           )}
@@ -194,75 +182,41 @@ export default function RaidNotificationBell() {
 
         {/* Speech bubble dropdown */}
         {isOpen && (
-          <div style={{
-            position: "absolute", top: "calc(100% + 10px)", right: 0,
-            background: "#12232b", border: "1.5px solid #f5b942",
-            borderRadius: "12px 4px 12px 12px", padding: "16px", width: "280px",
-            boxShadow: "0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,185,66,0.08)",
-            zIndex: 200,
-            animation: "bubble-drop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards",
-            fontFamily: "'Segoe UI','Aptos','Trebuchet MS',sans-serif",
-          }}>
+          <div
+            className="absolute right-0 top-[calc(100%+10px)] z-[200] w-[280px] rounded-tr-[4px] rounded-bl-[12px] rounded-br-[12px] rounded-tl-[12px] border-[1.5px] border-signal-performance bg-surface-raised p-4 font-sans shadow-[0_12px_48px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,176,32,0.08)]"
+            style={{ animation: "bubble-drop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards" }}
+          >
             {/* Tail pointing up toward bell */}
-            <div style={{
-              position: "absolute", top: "-8px", right: "16px",
-              width: 0, height: 0,
-              borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
-              borderBottom: "8px solid #f5b942",
-            }} />
-            <div style={{
-              position: "absolute", top: "-5px", right: "17px",
-              width: 0, height: 0,
-              borderLeft: "7px solid transparent", borderRight: "7px solid transparent",
-              borderBottom: "7px solid #12232b",
-            }} />
+            <div className="absolute right-4 top-[-8px] h-0 w-0 border-x-8 border-b-8 border-x-transparent border-b-signal-performance" />
+            <div className="absolute right-[17px] top-[-5px] h-0 w-0 border-x-[7px] border-b-[7px] border-x-transparent border-b-surface-raised" />
 
-            <div style={{
-              fontSize: "11px", fontWeight: 800, color: "#f5b942",
-              letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "12px",
-            }}>
+            <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-signal-performance">
               Notifications{count > 0 ? ` (${count})` : ""}
             </div>
 
             {count === 0 && (
-              <div style={{ color: "#4a6570", fontSize: "13px", textAlign: "center", padding: "12px 0" }}>
+              <div className="py-3 text-center text-[13px] text-foreground-subtle">
                 No pending notifications
               </div>
             )}
 
             {/* Duel challenge card */}
             {topDuel && (
-              <div style={{
-                background: "rgba(245,185,66,0.06)", border: "1px solid rgba(245,185,66,0.25)",
-                borderRadius: "10px", padding: "12px",
-                marginBottom: "8px",
-              }}>
-                <div style={{ fontSize: "11px", fontWeight: 800, color: "#f5b942", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "6px" }}>
+              <div className="mb-2 rounded-[10px] border border-signal-performance/25 bg-signal-performance/[0.06] p-3">
+                <div className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.07em] text-signal-performance">
                   ⚔️ Duel Challenge
                 </div>
-                <div style={{ fontSize: "13px", color: "#e8f0f3", marginBottom: "10px", lineHeight: 1.4 }}>
-                  <strong style={{ color: "#f5b942" }}>{topDuel.challengerName}</strong> challenged you to a 1v1 duel!
+                <div className="mb-2.5 text-[13px] leading-snug text-foreground">
+                  <strong className="text-signal-performance">{topDuel.challengerName}</strong> challenged you to a 1v1 duel!
                 </div>
-                <div style={{ display: "flex", gap: "7px" }}>
+                <div className="flex gap-1.5">
                   <button
                     onClick={() => handleChallengeAccept(topDuel)}
-                    style={{
-                      flex: 1, background: "#f5b942", color: "#0d1a1f",
-                      border: "none", borderRadius: "7px", padding: "7px 0",
-                      fontWeight: 800, cursor: "pointer", fontSize: "12px",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#d4a017"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "#f5b942"; }}
+                    className="flex-1 rounded-md bg-signal-performance py-1.5 text-xs font-extrabold text-background hover:brightness-90"
                   >Accept</button>
                   <button
                     onClick={() => handleChallengeReject(topDuel)}
-                    style={{
-                      flex: 1, background: "#1f2d34", color: "#9ca3af",
-                      border: "1px solid #334155", borderRadius: "7px", padding: "7px 0",
-                      cursor: "pointer", fontSize: "12px",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "#e8f0f3"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; }}
+                    className="flex-1 rounded-md border border-border-strong bg-surface-2 py-1.5 text-xs text-foreground-muted hover:text-foreground"
                   >Decline</button>
                 </div>
               </div>
@@ -270,82 +224,57 @@ export default function RaidNotificationBell() {
 
             {/* Team challenge card */}
             {topTeam && (
-              <div style={{
-                background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.22)",
-                borderRadius: "10px", padding: "12px", marginBottom: "8px",
-              }}>
-                <div style={{ fontSize: "11px", fontWeight: 800, color: "#22d3ee", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "6px" }}>
+              <div className="mb-2 rounded-[10px] border border-signal-ethics/20 bg-signal-ethics/5 p-3">
+                <div className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.07em] text-signal-ethics">
                   🛡️ Team Challenge
                 </div>
-                <div style={{ fontSize: "13px", color: "#e8f0f3", marginBottom: "10px", lineHeight: 1.4 }}>
-                  <strong style={{ color: "#f5b942" }}>{topTeam.challengerTeamEmoji} {topTeam.challengerTeamName}</strong>
-                  {" challenged "}<strong style={{ color: "#22d3ee" }}>{topTeam.challengeeTeamEmoji} {topTeam.challengeeTeamName}</strong>!
+                <div className="mb-2.5 text-[13px] leading-snug text-foreground">
+                  <strong className="text-signal-performance">{topTeam.challengerTeamEmoji} {topTeam.challengerTeamName}</strong>
+                  {" challenged "}<strong className="text-signal-ethics">{topTeam.challengeeTeamEmoji} {topTeam.challengeeTeamName}</strong>!
                 </div>
                 {topTeam.amChallengeeCaptain && topTeam.status === "pending" ? (
-                  <div style={{ display: "flex", gap: "7px" }}>
+                  <div className="flex gap-1.5">
                     <button
                       onClick={() => handleTeamChallengeAccept(topTeam)}
-                      style={{ flex: 1, background: "#22d3ee", color: "#0d1a1f", border: "none", borderRadius: "7px", padding: "7px 0", fontWeight: 800, cursor: "pointer", fontSize: "12px" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#0ea5e9"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "#22d3ee"; }}
+                      className="flex-1 rounded-md bg-signal-ethics py-1.5 text-xs font-extrabold text-background hover:brightness-90"
                     >Accept</button>
                     <button
                       onClick={() => handleTeamChallengeReject(topTeam)}
-                      style={{ flex: 1, background: "#1f2d34", color: "#9ca3af", border: "1px solid #334155", borderRadius: "7px", padding: "7px 0", cursor: "pointer", fontSize: "12px" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#e8f0f3"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; }}
+                      className="flex-1 rounded-md border border-border-strong bg-surface-2 py-1.5 text-xs text-foreground-muted hover:text-foreground"
                     >Decline</button>
                   </div>
                 ) : (
                   <button
                     onClick={() => handleTeamChallengeView(topTeam)}
-                    style={{ width: "100%", background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)", borderRadius: "7px", padding: "7px 0", fontWeight: 700, cursor: "pointer", fontSize: "12px" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(34,211,238,0.18)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(34,211,238,0.1)"; }}
+                    className="w-full rounded-md border border-signal-ethics/30 bg-signal-ethics/10 py-1.5 text-xs font-bold text-signal-ethics hover:bg-signal-ethics/[0.18]"
                   >View Lobby →</button>
                 )}
               </div>
             )}
 
             {topInvite && (
-              <div style={{
-                background: "rgba(245,185,66,0.05)", border: "1px solid rgba(245,185,66,0.15)",
-                borderRadius: "10px", padding: "12px",
-                marginBottom: count > 1 ? "8px" : "12px",
-              }}>
-                <div style={{ fontSize: "13px", color: "#e8f0f3", marginBottom: "10px", lineHeight: 1.4 }}>
-                  <strong style={{ color: "#f5b942" }}>{topInvite.inviterName}</strong>{" "}
+              <div className="rounded-[10px] border border-signal-performance/15 bg-signal-performance/5 p-3" style={{ marginBottom: count > 1 ? "8px" : "12px" }}>
+                <div className="mb-2.5 text-[13px] leading-snug text-foreground">
+                  <strong className="text-signal-performance">{topInvite.inviterName}</strong>{" "}
                   {topInvite.sourceTeamName
-                    ? <>is launching a <strong style={{ color: "#3ddc84" }}>{topInvite.sourceTeamName}</strong> Team Raid!</>
+                    ? <>is launching a <strong className="text-signal-scalability">{topInvite.sourceTeamName}</strong> Team Raid!</>
                     : "wants you on their team!"}
                 </div>
-                <div style={{ display: "flex", gap: "7px" }}>
+                <div className="flex gap-1.5">
                   <button
                     onClick={() => handleAccept(topInvite)}
-                    style={{
-                      flex: 1, background: "#22c55e", color: "#000",
-                      border: "none", borderRadius: "7px", padding: "7px 0",
-                      fontWeight: 800, cursor: "pointer", fontSize: "12px",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#16a34a"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "#22c55e"; }}
+                    className="flex-1 rounded-md bg-signal-scalability py-1.5 text-xs font-extrabold text-background hover:brightness-90"
                   >Accept</button>
                   <button
                     onClick={() => handleReject(topInvite)}
-                    style={{
-                      flex: 1, background: "#1f2d34", color: "#9ca3af",
-                      border: "1px solid #334155", borderRadius: "7px", padding: "7px 0",
-                      cursor: "pointer", fontSize: "12px",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "#e8f0f3"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; }}
+                    className="flex-1 rounded-md border border-border-strong bg-surface-2 py-1.5 text-xs text-foreground-muted hover:text-foreground"
                   >Reject</button>
                 </div>
               </div>
             )}
 
             {count > (topInvite ? 1 : 0) + (topDuel ? 1 : 0) && (
-              <div style={{ fontSize: "11px", color: "#4a6570", textAlign: "center", marginBottom: "10px" }}>
+              <div className="mb-2.5 text-center text-[11px] text-foreground-subtle">
                 +{count - (topInvite ? 1 : 0) - (topDuel ? 1 : 0)} more notification{count - (topInvite ? 1 : 0) - (topDuel ? 1 : 0) > 1 ? "s" : ""}
               </div>
             )}
@@ -353,15 +282,7 @@ export default function RaidNotificationBell() {
             <Link
               href="/notifications"
               onClick={() => setIsOpen(false)}
-              style={{
-                display: "block", width: "100%", textAlign: "center",
-                background: "rgba(201,214,218,0.04)", border: "1px solid rgba(201,214,218,0.1)",
-                color: "#6b7280", padding: "7px 0", borderRadius: "8px",
-                fontSize: "12px", fontWeight: 600, textDecoration: "none",
-                transition: "color 0.15s, border-color 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#e8f0f3"; e.currentTarget.style.borderColor = "rgba(201,214,218,0.25)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.borderColor = "rgba(201,214,218,0.1)"; }}
+              className="block w-full rounded-lg border border-border bg-foreground/[0.04] py-1.5 text-center text-xs font-semibold text-foreground-muted transition-colors hover:border-border-strong hover:text-foreground"
             >
               View past notifications →
             </Link>

@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RESULT_COLORS, CATEGORY_COLORS } from "@/lib/theme";
+
+// "Me" reuses the same win-green identity color the dashboard's duel history
+// rows use for "You"; "Opponent" reuses the Ethics signal cyan — matches the
+// convention already shipped in home-client.js's DuelRow.
+const ME_COLOR  = RESULT_COLORS.win;
+const OPP_COLOR = CATEGORY_COLORS.Ethics;
 
 const KEYFRAMES = `
 @keyframes radar-ring {
@@ -21,8 +28,8 @@ const KEYFRAMES = `
   100% { transform: scale(1)    rotate(0deg); opacity: 1; }
 }
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0px rgba(61,220,132,0); }
-  50%       { box-shadow: 0 0 40px rgba(61,220,132,0.5); }
+  0%, 100% { box-shadow: 0 0 0px ${ME_COLOR}00; }
+  50%       { box-shadow: 0 0 40px ${ME_COLOR}80; }
 }
 @keyframes battle-zoom {
   0%   { transform: scale(0.4); opacity: 0; }
@@ -40,16 +47,17 @@ const KEYFRAMES = `
 }
 `;
 
-function Avi({ name, size = 80, color = "#3ddc84" }) {
+function Avi({ name, size = 80, color = ME_COLOR }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${color}30, ${color}08)`,
-      border: `3px solid ${color}60`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.4, fontWeight: 900, color,
-      userSelect: "none",
-    }}>
+    <div
+      className="flex flex-shrink-0 select-none items-center justify-center rounded-full font-black"
+      style={{
+        width: size, height: size,
+        background: `linear-gradient(135deg, ${color}30, ${color}08)`,
+        border: `3px solid ${color}60`,
+        fontSize: size * 0.4, color,
+      }}
+    >
       {(name || "?")[0].toUpperCase()}
     </div>
   );
@@ -57,13 +65,14 @@ function Avi({ name, size = 80, color = "#3ddc84" }) {
 
 function RadarRing({ delay = 0 }) {
   return (
-    <div style={{
-      position: "absolute",
-      width: "120px", height: "120px", borderRadius: "50%",
-      border: "2px solid rgba(61,220,132,0.4)",
-      animation: `radar-ring 2s ease-out ${delay}s infinite`,
-      pointerEvents: "none",
-    }} />
+    <div
+      className="pointer-events-none absolute rounded-full"
+      style={{
+        width: "120px", height: "120px",
+        border: `2px solid ${ME_COLOR}66`,
+        animation: `radar-ring 2s ease-out ${delay}s infinite`,
+      }}
+    />
   );
 }
 
@@ -196,21 +205,18 @@ export default function MatchmakingClient({ myClerkId, myName }) {
   const wrap = (children) => (
     <>
       <style>{KEYFRAMES}</style>
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        background: "#0d1a1f", position: "relative", overflow: "hidden",
-        minHeight: 0,
-      }}>
+      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden bg-background">
         {/* subtle grid */}
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: [
-            "linear-gradient(rgba(201,214,218,0.03) 1px, transparent 1px)",
-            "linear-gradient(90deg, rgba(201,214,218,0.03) 1px, transparent 1px)",
-          ].join(", "),
-          backgroundSize: "44px 44px",
-        }} />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: [
+              "linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px)",
+              "linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px)",
+            ].join(", "),
+            backgroundSize: "44px 44px",
+          }}
+        />
         {children}
       </div>
     </>
@@ -219,12 +225,13 @@ export default function MatchmakingClient({ myClerkId, myName }) {
   // ── Phase: checking ────────────────────────────────────────
   if (phase === "checking") {
     return wrap(
-      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+      <div className="flex items-center gap-2.5">
         {[0, 1, 2].map((i) => (
-          <div key={i} style={{
-            width: "10px", height: "10px", borderRadius: "50%", background: "#3ddc84",
-            animation: `dot-bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-          }} />
+          <div
+            key={i}
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ background: ME_COLOR, animation: `dot-bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+          />
         ))}
       </div>
     );
@@ -233,50 +240,38 @@ export default function MatchmakingClient({ myClerkId, myName }) {
   // ── Phase: searching ──────────────────────────────────────
   if (phase === "searching") {
     return wrap(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", zIndex: 1 }}>
+      <div className="z-10 flex flex-col items-center">
         {/* Radar rings */}
-        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "120px", height: "120px", marginBottom: "40px" }}>
+        <div className="relative mb-10 flex h-[120px] w-[120px] items-center justify-center">
           <RadarRing delay={0} />
           <RadarRing delay={0.66} />
           <RadarRing delay={1.33} />
-          <div style={{
-            width: "72px", height: "72px", borderRadius: "50%",
-            background: "rgba(61,220,132,0.08)",
-            border: "2px solid rgba(61,220,132,0.4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "28px",
-          }}>
+          <div
+            className="flex h-[72px] w-[72px] items-center justify-center rounded-full text-[28px]"
+            style={{ background: `${ME_COLOR}14`, border: `2px solid ${ME_COLOR}66` }}
+          >
             ⚔️
           </div>
         </div>
 
-        <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#e8f0f3", letterSpacing: "-0.02em", margin: "0 0 8px" }}>
+        <h2 className="m-0 mb-2 text-[22px] font-extrabold tracking-tight text-foreground">
           Finding your opponent{dots}
         </h2>
 
         {onlineCount !== null && (
-          <p style={{ fontSize: "13px", color: "#4a6570", margin: "0 0 40px" }}>
+          <p className="m-0 mb-10 text-[13px] text-foreground-subtle">
             {onlineCount > 0
               ? `${onlineCount} other player${onlineCount !== 1 ? "s" : ""} online`
               : "Waiting for another player to join"}
           </p>
         )}
         {onlineCount === null && (
-          <p style={{ fontSize: "13px", color: "#4a6570", margin: "0 0 40px" }}>Searching arena…</p>
+          <p className="m-0 mb-10 text-[13px] text-foreground-subtle">Searching arena…</p>
         )}
 
         <button
           onClick={handleCancel}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(201,214,218,0.15)",
-            color: "#4a6570", cursor: "pointer",
-            padding: "9px 28px", borderRadius: "8px",
-            fontSize: "13px", fontWeight: 600,
-            transition: "color 0.15s, border-color 0.15s",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#e8f0f3"; e.currentTarget.style.borderColor = "rgba(201,214,218,0.35)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "#4a6570"; e.currentTarget.style.borderColor = "rgba(201,214,218,0.15)"; }}
+          className="cursor-pointer rounded-lg border border-border-strong bg-transparent px-7 py-2.5 text-[13px] font-semibold text-foreground-subtle transition-colors hover:text-foreground"
         >
           Cancel
         </button>
@@ -289,61 +284,58 @@ export default function MatchmakingClient({ myClerkId, myName }) {
     return wrap(
       <>
         {/* white flash overlay */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "white",
-          animation: "flash-bg 0.6s ease-out forwards",
-          pointerEvents: "none", zIndex: 2,
-        }} />
+        <div
+          className="pointer-events-none absolute inset-0 z-20 bg-white"
+          style={{ animation: "flash-bg 0.6s ease-out forwards" }}
+        />
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "48px", zIndex: 1 }}>
-          <p style={{ fontSize: "12px", fontWeight: 700, color: "#3ddc84", letterSpacing: "0.12em", textTransform: "uppercase", margin: 0 }}>
+        <div className="z-10 flex flex-col items-center gap-12">
+          <p className="m-0 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: ME_COLOR }}>
             Match Found!
           </p>
 
           {/* Players + sword */}
-          <div style={{ display: "flex", alignItems: "center", gap: "48px" }}>
+          <div className="flex items-center gap-12">
             {/* Me */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", animation: "float-in-left 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
+            <div className="flex flex-col items-center gap-3" style={{ animation: "float-in-left 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
               <div style={{ animation: "glow-pulse 1.5s ease-in-out infinite" }}>
-                <Avi name={myName} size={88} color="#3ddc84" />
+                <Avi name={myName} size={88} color={ME_COLOR} />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: "#e8f0f3", maxWidth: "110px", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span className="max-w-[110px] overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold text-foreground">
                 {myName}
               </span>
-              <span style={{ fontSize: "11px", color: "#3ddc84", fontWeight: 600 }}>You</span>
+              <span className="text-[11px] font-semibold" style={{ color: ME_COLOR }}>You</span>
             </div>
 
             {/* Sword */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              <div style={{ fontSize: "52px", animation: "sword-drop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both" }}>
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-[52px]" style={{ animation: "sword-drop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both" }}>
                 ⚔️
               </div>
-              <div style={{ fontSize: "28px", fontWeight: 900, color: "rgba(201,214,218,0.15)", letterSpacing: "0.06em" }}>
+              <div className="text-[28px] font-black tracking-[0.06em] text-foreground-subtle">
                 VS
               </div>
-              <div style={{
-                fontSize: "42px", fontWeight: 900, color: "#3ddc84",
-                fontVariantNumeric: "tabular-nums",
-                textShadow: "0 0 30px rgba(61,220,132,0.5)",
-              }}>
+              <div
+                className="font-display text-[42px] font-black"
+                style={{ color: ME_COLOR, fontVariantNumeric: "tabular-nums", textShadow: `0 0 30px ${ME_COLOR}80` }}
+              >
                 {countdown}
               </div>
             </div>
 
             {/* Opponent */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", animation: "float-in-right 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
+            <div className="flex flex-col items-center gap-3" style={{ animation: "float-in-right 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
               <div style={{ animation: "glow-pulse 1.5s ease-in-out 0.75s infinite" }}>
-                <Avi name={matchData?.opponentName ?? "?"} size={88} color="#22d3ee" />
+                <Avi name={matchData?.opponentName ?? "?"} size={88} color={OPP_COLOR} />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: "#e8f0f3", maxWidth: "110px", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span className="max-w-[110px] overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold text-foreground">
                 {matchData?.opponentName ?? "Opponent"}
               </span>
-              <span style={{ fontSize: "11px", color: "#22d3ee", fontWeight: 600 }}>Opponent</span>
+              <span className="text-[11px] font-semibold text-signal-ethics">Opponent</span>
             </div>
           </div>
 
-          <p style={{ fontSize: "13px", color: "#4a6570", margin: 0 }}>
+          <p className="m-0 text-[13px] text-foreground-subtle">
             Match #{matchData?.matchId} — starting in {countdown}…
           </p>
         </div>
@@ -353,43 +345,35 @@ export default function MatchmakingClient({ myClerkId, myName }) {
 
   // ── Phase: battle ─────────────────────────────────────────
   return wrap(
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", animation: "battle-zoom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards", zIndex: 1 }}>
-      <div style={{ fontSize: "64px" }}>⚔️</div>
-      <h1 style={{
-        fontSize: "clamp(36px, 7vw, 72px)",
-        fontWeight: 900, letterSpacing: "-0.03em",
-        color: "#e8f0f3",
-        margin: 0,
-        textShadow: "0 0 60px rgba(61,220,132,0.3)",
-      }}>
+    <div
+      className="z-10 flex flex-col items-center gap-6"
+      style={{ animation: "battle-zoom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards" }}
+    >
+      <div className="text-[64px]">⚔️</div>
+      <h1
+        className="m-0 font-display font-black tracking-tight text-foreground"
+        style={{ fontSize: "clamp(36px, 7vw, 72px)", textShadow: `0 0 60px ${ME_COLOR}4d` }}
+      >
         DUEL STARTS
       </h1>
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <span style={{ fontSize: "16px", fontWeight: 700, color: "#3ddc84" }}>{myName}</span>
-        <span style={{ fontSize: "13px", color: "#4a6570" }}>vs</span>
-        <span style={{ fontSize: "16px", fontWeight: 700, color: "#22d3ee" }}>{matchData?.opponentName ?? "Opponent"}</span>
+      <div className="flex items-center gap-4">
+        <span className="text-base font-bold" style={{ color: ME_COLOR }}>{myName}</span>
+        <span className="text-[13px] text-foreground-subtle">vs</span>
+        <span className="text-base font-bold text-signal-ethics">{matchData?.opponentName ?? "Opponent"}</span>
       </div>
-      <div style={{
-        background: "rgba(61,220,132,0.08)",
-        border: "1px solid rgba(61,220,132,0.2)",
-        borderRadius: "10px",
-        padding: "16px 32px",
-        textAlign: "center",
-        marginTop: "8px",
-      }}>
-        <p style={{ color: "#8ba0a6", fontSize: "14px", margin: "0 0 4px" }}>Match ID</p>
-        <p style={{ color: "#3ddc84", fontSize: "22px", fontWeight: 800, margin: 0 }}>#{matchData?.matchId}</p>
+      <div
+        className="mt-2 rounded-[10px] px-8 py-4 text-center"
+        style={{ background: `${ME_COLOR}14`, border: `1px solid ${ME_COLOR}33` }}
+      >
+        <p className="m-0 mb-1 text-sm text-foreground-muted">Match ID</p>
+        <p className="m-0 font-mono text-[22px] font-extrabold" style={{ color: ME_COLOR }}>#{matchData?.matchId}</p>
       </div>
-      <p style={{ fontSize: "13px", color: "#4a6570", margin: "8px 0 0" }}>
+      <p className="mt-2 text-[13px] text-foreground-subtle">
         Full duel arena coming soon.
       </p>
       <button
         onClick={() => { window.location.href = `/live-battle/arena/${matchData?.matchId}`; }}
-        style={{
-          marginTop: "8px", fontSize: "13px", color: "#4a6570",
-          textDecoration: "underline", cursor: "pointer",
-          background: "none", border: "none", padding: 0,
-        }}
+        className="mt-2 cursor-pointer border-none bg-transparent p-0 text-[13px] text-foreground-subtle underline"
       >
         Skip intro →
       </button>

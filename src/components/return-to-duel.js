@@ -26,21 +26,7 @@ export default function ReturnToDuelButton() {
   return (
     <Link
       href={`/live-battle/arena/${match.matchId}`}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        background: "rgba(245,185,66,0.08)",
-        color: "#f5b942",
-        textDecoration: "none",
-        border: "1px solid rgba(245,185,66,0.28)",
-        padding: "14px 20px",
-        borderRadius: "8px",
-        fontSize: "13px",
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-        letterSpacing: "-0.01em",
-      }}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-signal-performance/30 bg-signal-performance/10 px-5 py-3.5 text-[13px] font-semibold tracking-tight text-signal-performance"
     >
       ↩ Return to Previous Duel
     </Link>

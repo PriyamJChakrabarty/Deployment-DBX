@@ -15,9 +15,9 @@ function stateLabel(state) {
 }
 
 function stateColor(state) {
-  if (state === "in_match") return "#f5b942";
+  if (state === "in_match") return "#ffb020";
   if (state === "queueing") return "#22d3ee";
-  return "#3ddc84";
+  return "#2dd881";
 }
 
 function PlayerPip({ user }) {
@@ -26,39 +26,25 @@ function PlayerPip({ user }) {
   return (
     <div
       title={`${name} — ${stateLabel(user.state)}`}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        background: "rgba(201,214,218,0.04)",
-        border: "1px solid rgba(201,214,218,0.08)",
-        borderRadius: "8px",
-        padding: "7px 12px",
-        minWidth: 0,
-      }}
+      className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface/40 px-3 py-1.5"
     >
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{
-          width: "30px", height: "30px", borderRadius: "50%",
-          background: `linear-gradient(135deg, ${color}28, ${color}08)`,
-          border: `1.5px solid ${color}44`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "12px", fontWeight: 700, color,
-        }}>
+      <div className="relative flex-shrink-0">
+        <div
+          className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-xs font-bold"
+          style={{ background: `linear-gradient(135deg, ${color}28, ${color}08)`, border: `1.5px solid ${color}44`, color }}
+        >
           {name[0].toUpperCase()}
         </div>
-        <div style={{
-          position: "absolute", bottom: 0, right: 0,
-          width: "9px", height: "9px", borderRadius: "50%",
-          background: color,
-          border: "2px solid #0d1a1f",
-        }} />
+        <div
+          className="absolute bottom-0 right-0 h-[9px] w-[9px] rounded-full border-2"
+          style={{ background: color, borderColor: "var(--background)" }}
+        />
       </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: "12px", fontWeight: 600, color: "#e8f0f3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100px" }}>
+      <div className="min-w-0">
+        <div className="max-w-[100px] truncate text-xs font-semibold text-foreground">
           {name}
         </div>
-        <div style={{ fontSize: "10px", color, marginTop: "1px" }}>
+        <div className="mt-0.5 text-[10px]" style={{ color }}>
           {stateLabel(user.state)}
         </div>
       </div>
@@ -86,19 +72,12 @@ export default function OnlinePlayersWidget() {
   const count = players.length;
 
   return (
-    <div style={{ marginTop: "32px" }}>
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: "7px",
-        marginBottom: "16px",
-      }}>
-        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-          <div style={{
-            width: "8px", height: "8px", borderRadius: "50%",
-            background: "#3ddc84",
-            boxShadow: "0 0 8px rgba(61,220,132,0.6)",
-          }} />
+    <div className="mt-8">
+      <div className="mb-4 inline-flex items-center gap-1.5">
+        <div className="flex items-center">
+          <div className="h-2 w-2 rounded-full bg-[#2dd881] shadow-[0_0_8px_rgba(45,216,129,0.6)]" />
         </div>
-        <span style={{ fontSize: "13px", color: "#8ba0a6" }}>
+        <span className="text-[13px] text-foreground-muted">
           {count === 0
             ? "No other players online right now"
             : `${count} player${count !== 1 ? "s" : ""} online now`}
@@ -106,23 +85,12 @@ export default function OnlinePlayersWidget() {
       </div>
 
       {count > 0 && (
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-          justifyContent: "center",
-        }}>
+        <div className="flex flex-wrap justify-center gap-2">
           {players.slice(0, 12).map((u) => (
             <PlayerPip key={u.clerkId} user={u} />
           ))}
           {players.length > 12 && (
-            <div style={{
-              display: "flex", alignItems: "center",
-              padding: "7px 12px", borderRadius: "8px",
-              background: "rgba(201,214,218,0.04)",
-              border: "1px solid rgba(201,214,218,0.08)",
-              fontSize: "12px", color: "#4a6570",
-            }}>
+            <div className="flex items-center rounded-lg border border-border bg-surface/40 px-3 py-1.5 text-xs text-foreground-subtle">
               +{players.length - 12} more
             </div>
           )}

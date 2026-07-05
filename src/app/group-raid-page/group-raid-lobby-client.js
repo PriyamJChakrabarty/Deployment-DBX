@@ -9,8 +9,8 @@ const KEYFRAMES = `
   to   { transform: translateY(0);    opacity: 1; }
 }
 @keyframes card-glow {
-  0%, 100% { box-shadow: 0 0 0px rgba(245,185,66,0); }
-  50%       { box-shadow: 0 0 28px rgba(245,185,66,0.18); }
+  0%, 100% { box-shadow: 0 0 0px rgba(255,176,32,0); }
+  50%       { box-shadow: 0 0 28px rgba(255,176,32,0.18); }
 }
 `;
 
@@ -20,18 +20,20 @@ function FriendAvatar({ name, imageUrl, size = 40 }) {
       <img
         src={imageUrl}
         alt={name}
-        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+        className="flex-shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
       />
     );
   }
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: "linear-gradient(135deg, #f5b94220, #f5b94208)",
-      border: "2px solid #f5b94240",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.42, fontWeight: 900, color: "#f5b942", flexShrink: 0,
-    }}>
+    <div
+      className="flex flex-shrink-0 select-none items-center justify-center rounded-full border-2 border-signal-performance/25 font-black text-signal-performance"
+      style={{
+        width: size, height: size,
+        background: "linear-gradient(135deg, rgba(255,176,32,0.13), rgba(255,176,32,0.03))",
+        fontSize: size * 0.42,
+      }}
+    >
       {(name || "?")[0].toUpperCase()}
     </div>
   );
@@ -172,57 +174,41 @@ export default function GroupRaidLobbyClient({ myName, myClerkId, initialTeamGro
     return (
       <>
         <style>{KEYFRAMES}</style>
-        <div style={{
-          flex: 1, display: "flex", flexDirection: "column",
-          overflow: "hidden", background: "#0d1a1f",
-        }}>
+        <div className="flex flex-1 flex-col overflow-hidden bg-background">
           {/* Top bar */}
-          <div style={{
-            padding: "18px 28px", borderBottom: "1px solid rgba(245,185,66,0.12)",
-            display: "flex", alignItems: "center", gap: "16px", flexShrink: 0,
-          }}>
+          <div className="flex flex-shrink-0 items-center gap-4 border-b border-signal-performance/15 px-7 py-4.5">
             <button
               onClick={() => {
                 setActiveInviteId(null);
                 setPhase("lobby");
               }}
-              style={{
-                background: "transparent", border: "1px solid rgba(201,214,218,0.15)",
-                color: "#9ca3af", cursor: "pointer", padding: "6px 14px",
-                borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#e8f0f3"; e.currentTarget.style.borderColor = "rgba(201,214,218,0.35)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; e.currentTarget.style.borderColor = "rgba(201,214,218,0.15)"; }}
+              className="cursor-pointer rounded-lg border border-border-strong bg-transparent px-3.5 py-1.5 text-[13px] font-semibold text-foreground-muted transition-colors hover:text-foreground"
             >
               ← Back
             </button>
-            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 800, color: "#f5b942" }}>
+            <h2 className="m-0 text-lg font-extrabold text-signal-performance">
               👥 Invite a Teammate
             </h2>
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search friends…"
-              style={{
-                background: "rgba(201,214,218,0.06)", border: "1px solid rgba(201,214,218,0.15)",
-                color: "#e8f0f3", borderRadius: "8px", padding: "7px 14px",
-                fontSize: "13px", outline: "none", width: "200px",
-              }}
+              className="w-[200px] rounded-lg border border-border-strong bg-foreground/[0.04] px-3.5 py-1.5 text-[13px] text-foreground outline-none"
             />
           </div>
 
           {/* List */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
+          <div className="flex-1 overflow-y-auto px-7 py-5">
             {friendsLoading && (
-              <div style={{ textAlign: "center", color: "#4a6570", padding: "48px", fontSize: "14px" }}>
+              <div className="p-12 text-center text-sm text-foreground-subtle">
                 Loading your friends…
               </div>
             )}
             {!friendsLoading && friends.length === 0 && (
-              <div style={{ textAlign: "center", padding: "64px 24px" }}>
-                <div style={{ fontSize: "40px", marginBottom: "16px" }}>🤝</div>
-                <div style={{ color: "#4a6570", fontSize: "14px" }}>
+              <div className="px-6 py-16 text-center">
+                <div className="mb-4 text-4xl">🤝</div>
+                <div className="text-sm text-foreground-subtle">
                   You aren&apos;t following anyone yet. Follow players from the Leaderboard to invite them here.
                 </div>
               </div>
@@ -233,31 +219,25 @@ export default function GroupRaidLobbyClient({ myName, myClerkId, initialTeamGro
               const isExpiredOrRejected = status === "rejected" || status === "expired";
               const isPending = status === "pending" && !isExpiredOrRejected;
               const btnLabel = isPending ? "Inviting…" : "Invite";
-              const btnBg    = isPending ? "#374151"  : "#f5b942";
-              const btnColor = isPending ? "#6b7280"  : "#0d1a1f";
 
               return (
-                <div key={friend.clerkId} style={{
-                  display: "flex", alignItems: "center", gap: "14px",
-                  padding: "14px 18px", borderRadius: "12px",
-                  border: "1px solid rgba(201,214,218,0.08)",
-                  background: "rgba(201,214,218,0.025)",
-                  marginBottom: "8px",
-                  animation: "lobby-float 0.3s ease forwards",
-                }}>
+                <div
+                  key={friend.clerkId}
+                  className="mb-2 flex items-center gap-3.5 rounded-xl border border-border bg-foreground/[0.025] px-4.5 py-3.5"
+                  style={{ animation: "lobby-float 0.3s ease forwards" }}
+                >
                   <FriendAvatar name={friend.displayName} imageUrl={friend.imageUrl} />
-                  <span style={{ flex: 1, fontSize: "14px", fontWeight: 700, color: "#e8f0f3" }}>
+                  <span className="flex-1 text-sm font-bold text-foreground">
                     {friend.displayName}
                   </span>
                   <button
                     disabled={isPending}
                     onClick={() => !isPending && handleInvite(friend)}
+                    className="rounded-lg border-none px-4.5 py-1.5 text-[13px] font-bold transition-opacity"
                     style={{
-                      background: btnBg, color: btnColor,
-                      border: "none", borderRadius: "8px",
-                      padding: "7px 18px", fontSize: "13px", fontWeight: 700,
-                      cursor: isPending ? "default" : "pointer",
-                      transition: "opacity 0.15s",
+                      background: isPending ? "var(--surface-raised)" : "var(--signal-performance)",
+                      color:      isPending ? "var(--foreground-subtle)" : "var(--background)",
+                      cursor:     isPending ? "default" : "pointer",
                     }}
                   >
                     {btnLabel}
@@ -268,10 +248,7 @@ export default function GroupRaidLobbyClient({ myName, myClerkId, initialTeamGro
           </div>
 
           {/* Footer hint */}
-          <div style={{
-            padding: "12px 28px", borderTop: "1px solid rgba(201,214,218,0.06)",
-            fontSize: "11px", color: "#4a6570", textAlign: "center", flexShrink: 0,
-          }}>
+          <div className="flex-shrink-0 border-t border-border px-7 py-3 text-center text-[11px] text-foreground-subtle">
             Your invited friend will get a notification. Once they accept, you&apos;ll both search for 2 opponents together.
           </div>
         </div>
@@ -283,52 +260,38 @@ export default function GroupRaidLobbyClient({ myName, myClerkId, initialTeamGro
   return (
     <>
       <style>{KEYFRAMES}</style>
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        background: "#0d1a1f",
-        backgroundImage: [
-          "linear-gradient(rgba(201,214,218,0.02) 1px, transparent 1px)",
-          "linear-gradient(90deg, rgba(201,214,218,0.02) 1px, transparent 1px)",
-        ].join(", "),
-        backgroundSize: "48px 48px",
-        gap: "40px", padding: "32px",
-      }}>
-        <div style={{ textAlign: "center", animation: "lobby-float 0.4s ease forwards" }}>
-          <div style={{ fontSize: "48px", marginBottom: "12px" }}>🛡️</div>
-          <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 900, color: "#f5b942", letterSpacing: "-0.02em" }}>
+      <div
+        className="flex flex-1 flex-col items-center justify-center gap-10 bg-background p-8"
+        style={{
+          backgroundImage: [
+            "linear-gradient(rgba(148,163,184,0.035) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(148,163,184,0.035) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+        }}
+      >
+        <div className="text-center" style={{ animation: "lobby-float 0.4s ease forwards" }}>
+          <div className="mb-3 text-5xl">🛡️</div>
+          <h1 className="m-0 text-[26px] font-black tracking-tight text-signal-performance">
             Group Raid
           </h1>
-          <p style={{ margin: "8px 0 0", fontSize: "13px", color: "#4a6570" }}>
+          <p className="mt-2 text-[13px] text-foreground-subtle">
             2v2 — Find bugs faster as a squad
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", justifyContent: "center" }}>
+        <div className="flex flex-wrap justify-center gap-6">
           {/* Random Squad */}
           <button
             onClick={() => setPhase("random")}
-            style={{
-              background: "rgba(245,185,66,0.06)", border: "1px solid rgba(245,185,66,0.25)",
-              borderRadius: "16px", padding: "32px 36px", cursor: "pointer",
-              textAlign: "center", width: "220px",
-              transition: "border-color 0.15s, background 0.15s",
-              animation: "lobby-float 0.45s ease 0.05s both",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "rgba(245,185,66,0.6)";
-              e.currentTarget.style.background  = "rgba(245,185,66,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "rgba(245,185,66,0.25)";
-              e.currentTarget.style.background  = "rgba(245,185,66,0.06)";
-            }}
+            className="w-[220px] cursor-pointer rounded-2xl border border-signal-performance/25 bg-signal-performance/[0.06] px-9 py-8 text-center transition-colors hover:border-signal-performance/60 hover:bg-signal-performance/10"
+            style={{ animation: "lobby-float 0.45s ease 0.05s both" }}
           >
-            <div style={{ fontSize: "40px", marginBottom: "14px" }}>🎲</div>
-            <div style={{ fontSize: "15px", fontWeight: 800, color: "#f5b942", marginBottom: "8px" }}>
+            <div className="mb-3.5 text-4xl">🎲</div>
+            <div className="mb-2 text-[15px] font-extrabold text-signal-performance">
               Random Squad
             </div>
-            <div style={{ fontSize: "12px", color: "#4a6570", lineHeight: 1.5 }}>
+            <div className="text-xs leading-relaxed text-foreground-subtle">
               Queue with 3 random players. Fast and easy.
             </div>
           </button>
@@ -340,27 +303,14 @@ export default function GroupRaidLobbyClient({ myName, myClerkId, initialTeamGro
               setFriendLoading(true);
               setPhase("invite");
             }}
-            style={{
-              background: "rgba(61,220,132,0.05)", border: "1px solid rgba(61,220,132,0.2)",
-              borderRadius: "16px", padding: "32px 36px", cursor: "pointer",
-              textAlign: "center", width: "220px",
-              transition: "border-color 0.15s, background 0.15s",
-              animation: "lobby-float 0.45s ease 0.1s both",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "rgba(61,220,132,0.5)";
-              e.currentTarget.style.background  = "rgba(61,220,132,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "rgba(61,220,132,0.2)";
-              e.currentTarget.style.background  = "rgba(61,220,132,0.05)";
-            }}
+            className="w-[220px] cursor-pointer rounded-2xl border border-signal-scalability/20 bg-signal-scalability/5 px-9 py-8 text-center transition-colors hover:border-signal-scalability/50 hover:bg-signal-scalability/10"
+            style={{ animation: "lobby-float 0.45s ease 0.1s both" }}
           >
-            <div style={{ fontSize: "40px", marginBottom: "14px" }}>👥</div>
-            <div style={{ fontSize: "15px", fontWeight: 800, color: "#3ddc84", marginBottom: "8px" }}>
+            <div className="mb-3.5 text-4xl">👥</div>
+            <div className="mb-2 text-[15px] font-extrabold text-signal-scalability">
               Invite Friends
             </div>
-            <div style={{ fontSize: "12px", color: "#4a6570", lineHeight: 1.5 }}>
+            <div className="text-xs leading-relaxed text-foreground-subtle">
               Pick your teammate and find 2 opponents together.
             </div>
           </button>

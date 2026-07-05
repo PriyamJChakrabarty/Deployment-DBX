@@ -19,19 +19,6 @@ const KEYFRAMES = `
 }
 `;
 
-const C = {
-  bg:     "#0d1a1f",
-  panel:  "#0a1419",
-  card:   "#0e191f",
-  border: "rgba(201,214,218,0.07)",
-  green:  "#3ddc84",
-  gold:   "#f5b942",
-  red:    "#ef4444",
-  text:   "#e8f0f3",
-  sub:    "#8ba0a6",
-  muted:  "#4a6570",
-};
-
 function formatSeconds(s) {
   if (s <= 0) return "0:00";
   const m = Math.floor(s / 60);
@@ -141,17 +128,16 @@ export default function TeamRaidWaitClient({
   const wrap = (children) => (
     <>
       <style>{KEYFRAMES}</style>
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        background: C.bg, position: "relative", overflow: "hidden", minHeight: 0,
-        backgroundImage: [
-          "linear-gradient(rgba(201,214,218,0.02) 1px, transparent 1px)",
-          "linear-gradient(90deg, rgba(201,214,218,0.02) 1px, transparent 1px)",
-        ].join(", "),
-        backgroundSize: "48px 48px",
-        gap: 32,
-      }}>
+      <div
+        className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-8 overflow-hidden bg-background"
+        style={{
+          backgroundImage: [
+            "linear-gradient(color-mix(in oklab, var(--foreground) 8%, transparent) 1px, transparent 1px)",
+            "linear-gradient(90deg, color-mix(in oklab, var(--foreground) 8%, transparent) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+        }}
+      >
         {children}
       </div>
     </>
@@ -160,23 +146,19 @@ export default function TeamRaidWaitClient({
   // ── Expired ───────────────────────────────────────────────────
   if (phase === "expired" || phase === "cancelled") {
     return wrap(
-      <div style={{ textAlign: "center", animation: "wt-float 0.4s ease forwards" }}>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>⏰</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 8 }}>
+      <div className="text-center" style={{ animation: "wt-float 0.4s ease forwards" }}>
+        <div className="mb-4 text-[52px]">⏰</div>
+        <div className="mb-2 text-lg font-extrabold text-foreground">
           {phase === "cancelled" ? "Raid Cancelled" : "Invitation Expired"}
         </div>
-        <div style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>
+        <div className="mb-7 text-[13px] text-foreground-subtle">
           {phase === "cancelled"
             ? "A teammate cancelled the raid."
             : "Not everyone accepted in time."}
         </div>
         <button
           onClick={() => window.location.href = "/home"}
-          style={{
-            background: C.gold, color: "#0d1a1f", border: "none",
-            borderRadius: 8, padding: "10px 28px",
-            fontSize: 13, fontWeight: 800, cursor: "pointer",
-          }}
+          className="rounded-lg bg-signal-performance px-7 py-2.5 text-[13px] font-extrabold text-background"
         >
           Back to Home
         </button>
@@ -187,40 +169,40 @@ export default function TeamRaidWaitClient({
   // ── All ready flash ───────────────────────────────────────────
   if (phase === "all_ready") {
     return wrap(
-      <div style={{ textAlign: "center", animation: "wt-float 0.3s ease forwards" }}>
-        <div style={{ fontSize: 56, marginBottom: 16, animation: "wt-check 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
+      <div className="text-center" style={{ animation: "wt-float 0.3s ease forwards" }}>
+        <div className="mb-4 text-[56px]" style={{ animation: "wt-check 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
           {teamEmoji}
         </div>
-        <div style={{ fontSize: 20, fontWeight: 900, color: C.green, marginBottom: 6, letterSpacing: "-0.02em" }}>
+        <div className="mb-1.5 text-xl font-black tracking-[-0.02em] text-signal-scalability">
           All Ready!
         </div>
-        <div style={{ fontSize: 13, color: C.muted }}>Entering matchmaking…</div>
+        <div className="text-[13px] text-foreground-subtle">Entering matchmaking…</div>
       </div>
     );
   }
 
   // ── Waiting ───────────────────────────────────────────────────
-  const urgentColor = secondsLeft <= 30 ? C.red : secondsLeft <= 60 ? C.gold : C.green;
+  const urgentColor = secondsLeft <= 30 ? "var(--signal-security)" : secondsLeft <= 60 ? "var(--signal-performance)" : "var(--signal-scalability)";
   const iAmInvitee  = invites.some((i) => i.inviteeClerkId === myClerkId);
 
   return wrap(
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 32, zIndex: 1, width: "100%", maxWidth: 440, padding: "0 24px" }}>
+    <div className="z-[1] flex w-full max-w-[440px] flex-col items-center gap-8 px-6">
 
       {/* Team identity */}
-      <div style={{ textAlign: "center", animation: "wt-float 0.4s ease forwards" }}>
-        <div style={{ fontSize: 56, marginBottom: 10, animation: "wt-pulse 2s ease-in-out infinite" }}>
+      <div className="text-center" style={{ animation: "wt-float 0.4s ease forwards" }}>
+        <div className="mb-2.5 text-[56px]" style={{ animation: "wt-pulse 2s ease-in-out infinite" }}>
           {teamEmoji}
         </div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: C.text, letterSpacing: "-0.02em", marginBottom: 4 }}>
+        <div className="mb-1 text-[22px] font-black tracking-[-0.02em] text-foreground">
           {teamName}
         </div>
-        <div style={{ fontSize: 12, color: C.muted }}>
+        <div className="text-xs text-foreground-subtle">
           {iAmInvitee ? "Waiting for your squad to get here…" : "Waiting for teammates to accept…"}
         </div>
       </div>
 
       {/* Member status cards */}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="flex w-full flex-col gap-2">
         {/* Captain (you, if you're captain) */}
         <MemberStatusRow
           name={myName}
@@ -241,17 +223,18 @@ export default function TeamRaidWaitClient({
       </div>
 
       {/* Countdown */}
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontSize: 48, fontWeight: 900, color: urgentColor,
-          fontVariantNumeric: "tabular-nums",
-          textShadow: `0 0 24px ${urgentColor}55`,
-          letterSpacing: "-0.04em", lineHeight: 1,
-          transition: "color 0.3s",
-        }}>
+      <div className="text-center">
+        <div
+          className="font-mono text-[48px] font-black leading-none tracking-[-0.04em] transition-colors duration-300"
+          style={{
+            color: urgentColor,
+            fontVariantNumeric: "tabular-nums",
+            textShadow: `0 0 24px color-mix(in oklab, ${urgentColor} 55%, transparent)`,
+          }}
+        >
           {formatSeconds(secondsLeft)}
         </div>
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 6, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+        <div className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-foreground-subtle">
           Time Remaining
         </div>
       </div>
@@ -259,13 +242,7 @@ export default function TeamRaidWaitClient({
       {/* Cancel */}
       <button
         onClick={handleCancel}
-        style={{
-          background: "transparent", border: `1px solid ${C.border}`,
-          color: C.muted, borderRadius: 8, padding: "8px 28px",
-          fontSize: 13, fontWeight: 600, cursor: "pointer",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = "rgba(201,214,218,0.3)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.border; }}
+        className="rounded-lg border border-border px-7 py-2 text-[13px] font-semibold text-foreground-subtle transition-colors hover:border-border-strong hover:text-foreground"
       >
         Cancel
       </button>
@@ -279,39 +256,43 @@ function MemberStatusRow({ name, isMe, status, isVisible = true }) {
   const accepted = status === "accepted";
   const rejected = status === "rejected" || status === "expired";
 
-  const iconColor = accepted ? C.green : rejected ? C.red : C.gold;
+  const iconColor = accepted ? "var(--signal-scalability)" : rejected ? "var(--signal-security)" : "var(--signal-performance)";
   const icon      = accepted ? "✓" : rejected ? "✗" : "…";
   const label     = accepted ? "Ready" : rejected ? "Declined" : "Waiting";
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "12px 16px", borderRadius: 10,
-      background: C.card, border: `1px solid ${iconColor}22`,
-      animation: "wt-float 0.35s ease forwards",
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-        background: `${iconColor}12`,
-        border: `1.5px solid ${iconColor}44`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 14, fontWeight: 800, color: iconColor,
-      }}>
+    <div
+      className="flex items-center gap-3 rounded-[10px] bg-surface-2 px-4 py-3"
+      style={{
+        border: `1px solid color-mix(in oklab, ${iconColor} 22%, transparent)`,
+        animation: "wt-float 0.35s ease forwards",
+      }}
+    >
+      <div
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-extrabold"
+        style={{
+          background: `color-mix(in oklab, ${iconColor} 12%, transparent)`,
+          border: `1.5px solid color-mix(in oklab, ${iconColor} 44%, transparent)`,
+          color: iconColor,
+        }}
+      >
         {(name || "?")[0].toUpperCase()}
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+      <div className="flex-1">
+        <div className="text-[13px] font-bold text-foreground">
           {name}{isMe ? " (you)" : ""}
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        <span style={{ fontSize: 12, color: iconColor, fontWeight: 700 }}>{icon}</span>
-        <span style={{
-          fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-          letterSpacing: "0.08em", color: iconColor,
-          background: `${iconColor}12`, border: `1px solid ${iconColor}30`,
-          borderRadius: 99, padding: "2px 8px",
-        }}>
+      <div className="flex flex-shrink-0 items-center gap-1.5">
+        <span className="text-xs font-bold" style={{ color: iconColor }}>{icon}</span>
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]"
+          style={{
+            color: iconColor,
+            background: `color-mix(in oklab, ${iconColor} 12%, transparent)`,
+            border: `1px solid color-mix(in oklab, ${iconColor} 30%, transparent)`,
+          }}
+        >
           {label}
         </span>
       </div>

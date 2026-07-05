@@ -1,28 +1,152 @@
 @import "tailwindcss";
 
+/*
+  ============================================================
+  DEBUGROYALE — "THREAT SCANNER" DESIGN SYSTEM
+  A detection/HUD metaphor: cool graphite base, a single
+  vermillion signal accent, and five category "signal" colors
+  that only surface when something is actively flagged.
+  DebugRoyale is dark-only by design (no light mode toggle) —
+  color-scheme is fixed, not driven by OS preference.
+  ============================================================
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-sans: "Segoe UI", "Aptos", "Trebuchet MS", sans-serif;
-  --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  color-scheme: dark;
+
+  /* Surfaces */
+  --background:      #0a0c10;
+  --surface:         #10141b;
+  --surface-2:       #161b24;
+  --surface-raised:  #1b212c;
+  --border:          rgba(148, 163, 184, 0.12);
+  --border-strong:   rgba(148, 163, 184, 0.22);
+
+  /* Text */
+  --foreground:         #eef2f6;
+  --foreground-muted:   #94a3b3;
+  --foreground-subtle:  #576270;
+
+  /* Brand signal — vermillion, used sparingly (CTAs, lock-on states) */
+  --brand:        #ff5d3a;
+  --brand-strong: #ff7a52;
+  --brand-dim:    rgba(255, 93, 58, 0.14);
+
+  /* Category signal colors — only appear when a category is active.
+     Hue family matches the product's existing category taxonomy
+     (Security=red, Performance=amber, Scalability=green, Ethics=cyan,
+     Maintainability=violet) so the mapping stays recognizable. */
+  --signal-security:        #ff3b5c;
+  --signal-performance:     #ffb020;
+  --signal-scalability:     #2dd881;
+  --signal-ethics:          #22d3ee;
+  --signal-maintainability: #b794f6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --color-background:         var(--background);
+  --color-surface:             var(--surface);
+  --color-surface-2:           var(--surface-2);
+  --color-surface-raised:      var(--surface-raised);
+  --color-border:              var(--border);
+  --color-border-strong:       var(--border-strong);
+
+  --color-foreground:          var(--foreground);
+  --color-foreground-muted:    var(--foreground-muted);
+  --color-foreground-subtle:   var(--foreground-subtle);
+
+  --color-brand:               var(--brand);
+  --color-brand-strong:        var(--brand-strong);
+  --color-brand-dim:           var(--brand-dim);
+
+  --color-signal-security:        var(--signal-security);
+  --color-signal-performance:     var(--signal-performance);
+  --color-signal-scalability:     var(--signal-scalability);
+  --color-signal-ethics:           var(--signal-ethics);
+  --color-signal-maintainability:  var(--signal-maintainability);
+
+  /* --font-*-raw come from next/font (see layout.js); fallback stacks kick in
+     only if that variable is entirely unset. */
+  --font-display: var(--font-display-raw), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    var(--font-sans-raw), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    var(--font-mono-raw), ui-monospace, SFMono-Regular, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--background);
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans-raw), ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+/* Thin HUD-style scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-raised);
+  border-radius: 999px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+@layer utilities {
+  /* Scan-line sweep — a light band passes over an element once */
+  @keyframes scan-sweep {
+    0%   { transform: translateX(-120%); opacity: 0; }
+    12%  { opacity: 0.9; }
+    100% { transform: translateX(220%); opacity: 0; }
+  }
+  .scan-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 40%,
+      color-mix(in oklab, var(--brand) 55%, transparent) 50%,
+      transparent 60%
+    );
+    animation: scan-sweep 2.6s ease-in-out infinite;
+  }
+
+  /* Bracket-lock reveal — corner brackets snap in around an element */
+  @keyframes bracket-in {
+    from { clip-path: inset(45% 45% 45% 45% round 12px); opacity: 0; }
+    to   { clip-path: inset(0% 0% 0% 0% round 12px); opacity: 1; }
+  }
+  .bracket-in {
+    animation: bracket-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .text-glow-brand {
+    text-shadow: 0 0 32px var(--brand-dim), 0 0 64px var(--brand-dim);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .scan-sweep::after {
+    display: none;
+  }
 }

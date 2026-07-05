@@ -5,14 +5,7 @@ import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/ext-language_tools";
-
-const CATS = [
-  { key: "Security",        icon: "🔒", color: "#ff5c5c" },
-  { key: "Performance",     icon: "⚡", color: "#f5b942" },
-  { key: "Scalability",     icon: "📈", color: "#3ddc84" },
-  { key: "Ethics",          icon: "⚖️",  color: "#22d3ee" },
-  { key: "Maintainability", icon: "🔧", color: "#a78bfa" },
-];
+import { CATEGORIES as CATS, RESULT_COLORS } from "@/lib/theme";
 
 const PTS_PER_FIX = 20;
 
@@ -25,30 +18,25 @@ function FileLeaf({ node, selectedPath, onSelect, fileProg }) {
     <button
       onClick={() => onSelect(node.path)}
       title={node.path}
+      className="flex w-full items-center gap-1.5 border-none py-1.5 pl-5 pr-2.5 text-left"
       style={{
-        width: "100%", background: "none", border: "none",
-        cursor: "pointer", textAlign: "left",
-        padding: "5px 10px 5px 20px",
-        display: "flex", alignItems: "center", gap: "7px",
-        borderLeft: isSel ? "2px solid #3ddc84" : "2px solid transparent",
-        background: isSel ? "rgba(61,220,132,0.06)" : "transparent",
+        cursor: "pointer",
+        borderLeft: isSel ? `2px solid ${RESULT_COLORS.win}` : "2px solid transparent",
+        background: isSel ? `${RESULT_COLORS.win}0f` : "transparent",
       }}
     >
-      <span style={{ fontSize: "11px", flexShrink: 0 }}>📄</span>
-      <span style={{
-        fontSize: "12px",
-        color: isSel ? "#e8f0f3" : "#8ba0a6",
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        flex: 1,
-      }}>
+      <span className="flex-shrink-0 text-[11px]">📄</span>
+      <span
+        className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs"
+        style={{ color: isSel ? "var(--foreground)" : "var(--foreground-muted)" }}
+      >
         {node.name}
       </span>
       {fixed > 0 && (
-        <span style={{
-          fontSize: "10px", fontWeight: 700, color: "#3ddc84",
-          background: "rgba(61,220,132,0.12)", padding: "1px 6px", borderRadius: "999px",
-          flexShrink: 0,
-        }}>
+        <span
+          className="flex-shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold"
+          style={{ color: RESULT_COLORS.win, background: `${RESULT_COLORS.win}1f` }}
+        >
           {fixed}/5
         </span>
       )}
@@ -84,23 +72,18 @@ function FolderBranch({ node, selectedPath, onSelect, progress }) {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        style={{
-          width: "100%", background: "none", border: "none",
-          cursor: "pointer", textAlign: "left",
-          padding: "5px 10px",
-          display: "flex", alignItems: "center", gap: "6px",
-        }}
+        className="flex w-full cursor-pointer items-center gap-1.5 border-none bg-none px-2.5 py-1.5 text-left"
       >
-        <span style={{ fontSize: "9px", color: "#4a6570", width: "10px", flexShrink: 0 }}>
+        <span className="w-2.5 flex-shrink-0 text-[9px] text-foreground-subtle">
           {open ? "▾" : "▸"}
         </span>
-        <span style={{ fontSize: "12px", flexShrink: 0 }}>📁</span>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "#8ba0a6", letterSpacing: "-0.01em" }}>
+        <span className="flex-shrink-0 text-xs">📁</span>
+        <span className="text-xs font-semibold tracking-tight text-foreground-muted">
           {node.name}
         </span>
       </button>
       {open && (
-        <div style={{ paddingLeft: "14px" }}>
+        <div className="pl-3.5">
           {node.children.map((child) => (
             <FolderBranch key={child.name} node={child} selectedPath={selectedPath} onSelect={onSelect} progress={progress} />
           ))}
@@ -118,77 +101,60 @@ function CategoryRow({ cat, vulns, catProg, isActive, onToggle, onCheck, checkin
   const justFixed   = justChecked && (lastCheck?.added ?? 0) > 0;
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(201,214,218,0.05)" }}>
+    <div className="border-b border-border">
       <button
         onClick={onToggle}
-        style={{
-          width: "100%", border: "none", cursor: "pointer",
-          background: isActive ? `${cat.color}09` : "none",
-          padding: "11px 16px",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}
+        className="flex w-full cursor-pointer items-center gap-2.5 border-none px-4 py-2.5 text-left"
+        style={{ background: isActive ? `${cat.color}09` : "none" }}
       >
-        <span style={{ fontSize: "16px", flexShrink: 0 }}>{cat.icon}</span>
-        <span style={{
-          fontSize: "12.5px", fontWeight: 600, flex: 1, textAlign: "left",
-          color: isDone ? cat.color : "#e8f0f3",
-        }}>
+        <span className="flex-shrink-0 text-base">{cat.icon}</span>
+        <span className="flex-1 text-[12.5px] font-semibold" style={{ color: isDone ? cat.color : "var(--foreground)" }}>
           {cat.key}
         </span>
 
         {isDone ? (
-          <span style={{
-            fontSize: "9.5px", fontWeight: 800, letterSpacing: "0.04em",
-            color: cat.color, background: `${cat.color}18`,
-            padding: "2px 8px", borderRadius: "4px",
-          }}>
+          <span
+            className="rounded px-2 py-0.5 text-[9.5px] font-extrabold tracking-[0.04em]"
+            style={{ color: cat.color, background: `${cat.color}18` }}
+          >
             ✓ FIXED
           </span>
         ) : (
-          <span style={{ fontSize: "10.5px", color: fixedIdxs.length > 0 ? cat.color : "#4a6570" }}>
+          <span className="text-[10.5px]" style={{ color: fixedIdxs.length > 0 ? cat.color : "var(--foreground-subtle)" }}>
             {fixedIdxs.length}/{vulns.length}
           </span>
         )}
 
-        <span style={{ fontSize: "10px", color: "#4a6570", flexShrink: 0 }}>
+        <span className="flex-shrink-0 text-[10px] text-foreground-subtle">
           {isActive ? "▾" : "▸"}
         </span>
       </button>
 
       {isActive && (
-        <div style={{ padding: "0 14px 14px 14px" }}>
+        <div className="px-3.5 pb-3.5">
           {vulns.map((vuln, vi) => {
             const fixed = fixedIdxs.includes(vi);
             const lines = Array.isArray(vuln["Line Number"]) ? vuln["Line Number"].join("–") : "?";
             return (
-              <div key={vi} style={{
-                marginBottom: "10px",
-                background: fixed ? "rgba(61,220,132,0.04)" : "#080f12",
-                border: `1px solid ${fixed ? "rgba(61,220,132,0.22)" : "rgba(201,214,218,0.06)"}`,
-                borderRadius: "8px", padding: "11px",
-              }}>
-                <div style={{
-                  fontSize: "10px", fontWeight: 700, color: cat.color,
-                  letterSpacing: "0.04em", marginBottom: "7px",
-                }}>
+              <div
+                key={vi}
+                className="mb-2.5 rounded-lg p-2.5"
+                style={{
+                  background: fixed ? `${RESULT_COLORS.win}0a` : "var(--background)",
+                  border: `1px solid ${fixed ? `${RESULT_COLORS.win}38` : "var(--border)"}`,
+                }}
+              >
+                <div className="mb-1.5 text-[10px] font-bold tracking-[0.04em]" style={{ color: cat.color }}>
                   📍 Lines {lines}
                 </div>
-                <pre style={{
-                  margin: "0 0 8px", fontSize: "11px",
-                  fontFamily: "'Cascadia Code','Fira Code','Consolas',monospace",
-                  color: "#c9d6da", background: "#0d1117",
-                  borderRadius: "5px", padding: "7px 9px",
-                  border: "1px solid rgba(201,214,218,0.05)",
-                  overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all",
-                  lineHeight: 1.55,
-                }}>
+                <pre className="m-0 mb-2 overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background p-[7px_9px] font-mono text-[11px] leading-relaxed text-foreground">
                   {vuln["Vulnerability Code"]}
                 </pre>
-                <p style={{ margin: 0, fontSize: "11.5px", color: "#8ba0a6", lineHeight: 1.55 }}>
+                <p className="m-0 text-[11.5px] leading-relaxed text-foreground-muted">
                   💡 {vuln["Hint"]}
                 </p>
                 {fixed && (
-                  <div style={{ marginTop: "7px", fontSize: "11px", fontWeight: 700, color: "#3ddc84" }}>
+                  <div className="mt-1.5 text-[11px] font-bold" style={{ color: RESULT_COLORS.win }}>
                     ✓ Vulnerability fixed!
                   </div>
                 )}
@@ -197,13 +163,14 @@ function CategoryRow({ cat, vulns, catProg, isActive, onToggle, onCheck, checkin
           })}
 
           {justChecked && (
-            <div style={{
-              padding: "9px 12px", borderRadius: "7px", marginBottom: "10px",
-              background: justFixed ? "rgba(61,220,132,0.1)" : "rgba(245,90,90,0.08)",
-              border: `1px solid ${justFixed ? "rgba(61,220,132,0.3)" : "rgba(245,90,90,0.2)"}`,
-              fontSize: "12px", fontWeight: 600,
-              color: justFixed ? "#3ddc84" : isDone ? "#3ddc84" : "#ff8080",
-            }}>
+            <div
+              className="mb-2.5 rounded-lg px-3 py-2.5 text-xs font-semibold"
+              style={{
+                background: justFixed ? `${RESULT_COLORS.win}1a` : "rgba(255,59,92,0.08)",
+                border: `1px solid ${justFixed ? `${RESULT_COLORS.win}4d` : "var(--signal-security)"}`,
+                color: justFixed ? RESULT_COLORS.win : isDone ? RESULT_COLORS.win : "#ff8080",
+              }}
+            >
               {isDone
                 ? "✓ All vulnerabilities in this category are fixed!"
                 : justFixed
@@ -216,15 +183,11 @@ function CategoryRow({ cat, vulns, catProg, isActive, onToggle, onCheck, checkin
             <button
               onClick={onCheck}
               disabled={checking}
+              className="w-full rounded-lg border-none py-2.5 text-[12.5px] font-extrabold transition-colors"
               style={{
-                width: "100%",
-                background: checking ? "rgba(201,214,218,0.05)" : cat.color,
-                color: checking ? "#4a6570" : "#0d1a1f",
-                border: "none",
+                background: checking ? "var(--surface-2)" : cat.color,
+                color: checking ? "var(--foreground-subtle)" : "var(--background)",
                 cursor: checking ? "not-allowed" : "pointer",
-                padding: "9px 0", borderRadius: "7px",
-                fontSize: "12.5px", fontWeight: 800,
-                transition: "background 0.15s, color 0.15s",
               }}
             >
               {checking ? "Checking with AI…" : `Check ${cat.key} →`}
@@ -332,93 +295,71 @@ export default function GroupRaidArena({ codebaseName, files, filesCode, fileTre
   const pct = totalVulns > 0 ? Math.round((totalFixed / totalVulns) * 100) : 0;
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 
       {/* ── Top bar ──────────────────────────────────────────── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "14px",
-        padding: "0 20px", height: "50px", flexShrink: 0,
-        background: "#060c0f",
-        borderBottom: "1px solid rgba(201,214,218,0.08)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "15px" }}>🛡️</span>
-          <span style={{ fontSize: "13.5px", fontWeight: 800, color: "#e8f0f3", letterSpacing: "-0.01em" }}>
+      <div className="flex h-[50px] flex-shrink-0 items-center gap-3.5 border-b border-border bg-background px-5">
+        <div className="flex items-center gap-2">
+          <span className="text-[15px]">🛡️</span>
+          <span className="text-[13.5px] font-extrabold tracking-tight text-foreground">
             Group Raid
           </span>
-          <span style={{ color: "#4a6570", fontSize: "12px" }}>·</span>
-          <span style={{ fontSize: "12px", color: "#f5b942", fontWeight: 600 }}>
+          <span className="text-xs text-foreground-subtle">·</span>
+          <span className="text-xs font-semibold text-signal-performance">
             {codebaseName}
           </span>
-          <span style={{
-            fontSize: "10px", fontWeight: 700, color: "#f5b942",
-            background: "rgba(245,185,66,0.12)", border: "1px solid rgba(245,185,66,0.25)",
-            padding: "1px 8px", borderRadius: "999px",
-          }}>
+          <span className="rounded-full border border-signal-performance/25 bg-signal-performance/[0.12] px-2 py-px text-[10px] font-bold text-signal-performance">
             {files.length} FILES
           </span>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "11px", color: "#4a6570", whiteSpace: "nowrap" }}>
+        <div className="flex items-center gap-2.5">
+          <span className="whitespace-nowrap text-[11px] text-foreground-subtle">
             {totalFixed}/{totalVulns}
           </span>
-          <div style={{
-            width: "160px", height: "5px",
-            background: "rgba(201,214,218,0.07)", borderRadius: "3px", overflow: "hidden",
-          }}>
-            <div style={{
-              height: "100%", borderRadius: "3px",
-              width: `${pct}%`,
-              background: "linear-gradient(90deg, #3ddc84, #22d3ee)",
-              transition: "width 0.5s ease",
-              boxShadow: "0 0 8px rgba(61,220,132,0.4)",
-            }} />
+          <div className="h-[5px] w-[160px] overflow-hidden rounded-[3px] bg-border">
+            <div
+              className="h-full rounded-[3px] transition-[width] duration-500 ease-out"
+              style={{
+                width: `${pct}%`,
+                background: `linear-gradient(90deg, ${RESULT_COLORS.win}, var(--signal-ethics))`,
+                boxShadow: `0 0 8px ${RESULT_COLORS.win}66`,
+              }}
+            />
           </div>
-          <span style={{ fontSize: "11px", color: pct === 100 ? "#3ddc84" : "#8ba0a6", fontWeight: pct === 100 ? 700 : 400 }}>
+          <span className="text-[11px]" style={{ color: pct === 100 ? RESULT_COLORS.win : "var(--foreground-muted)", fontWeight: pct === 100 ? 700 : 400 }}>
             {pct}%
           </span>
         </div>
 
-        <div style={{
-          display: "flex", alignItems: "center", gap: "6px",
-          background: "rgba(61,220,132,0.08)", border: "1px solid rgba(61,220,132,0.22)",
-          borderRadius: "8px", padding: "5px 14px",
-        }}>
-          <span style={{ fontSize: "14px" }}>🏆</span>
-          <span style={{ fontSize: "15px", fontWeight: 900, color: "#3ddc84", fontVariantNumeric: "tabular-nums" }}>
+        <div
+          className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5"
+          style={{ background: `${RESULT_COLORS.win}14`, border: `1px solid ${RESULT_COLORS.win}38` }}
+        >
+          <span className="text-sm">🏆</span>
+          <span className="font-mono text-[15px] font-black" style={{ color: RESULT_COLORS.win, fontVariantNumeric: "tabular-nums" }}>
             {totalScore.toLocaleString()}
           </span>
-          <span style={{ fontSize: "10px", color: "#4a6570" }}>pts</span>
+          <span className="text-[10px] text-foreground-subtle">pts</span>
         </div>
       </div>
 
       {/* ── Three-column layout ───────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden" }}>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
 
         {/* Left: File tree */}
-        <div style={{
-          width: "250px", flexShrink: 0,
-          background: "#060c0f",
-          borderRight: "1px solid rgba(201,214,218,0.07)",
-          display: "flex", flexDirection: "column",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            padding: "10px 14px 8px",
-            borderBottom: "1px solid rgba(201,214,218,0.06)",
-            flexShrink: 0, display: "flex", alignItems: "center", gap: "6px",
-          }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#4a6570", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+        <div className="flex w-[250px] flex-shrink-0 flex-col overflow-hidden border-r border-border bg-background">
+          <div className="flex flex-shrink-0 items-center gap-1.5 border-b border-border px-3.5 pb-2 pt-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-foreground-subtle">
               Explorer
             </span>
-            <span style={{ fontSize: "10px", color: "#4a6570", marginLeft: "auto" }}>
+            <span className="ml-auto text-[10px] text-foreground-subtle">
               {files.length} files
             </span>
           </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
+          <div className="flex-1 overflow-y-auto py-1.5">
             <FolderBranch
               node={fileTree}
               selectedPath={selectedPath}
@@ -429,34 +370,21 @@ export default function GroupRaidArena({ codebaseName, files, filesCode, fileTre
         </div>
 
         {/* Center: Ace Editor */}
-        <div style={{
-          flex: 1, display: "flex", flexDirection: "column",
-          minWidth: 0, minHeight: 0,
-          background: "#1e1e1e",
-        }}>
-          <div style={{
-            padding: "6px 16px",
-            background: "#0d1117",
-            borderBottom: "1px solid rgba(201,214,218,0.07)",
-            display: "flex", alignItems: "center", gap: "10px", flexShrink: 0,
-          }}>
-            <span style={{ fontSize: "13px" }}>📄</span>
-            <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#e8f0f3", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#1e1e1e]">
+          <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border bg-background px-4 py-1.5">
+            <span className="text-[13px]">📄</span>
+            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold text-foreground">
               {selectedPath ?? "No file selected"}
             </span>
-            <span style={{
-              fontSize: "10px", fontWeight: 700, color: "#22d3ee",
-              background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)",
-              padding: "2px 8px", borderRadius: "4px", flexShrink: 0,
-            }}>
+            <span className="flex-shrink-0 rounded border border-signal-ethics/20 bg-signal-ethics/10 px-2 py-0.5 text-[10px] font-bold text-signal-ethics">
               C++
             </span>
-            <span style={{ fontSize: "11px", color: "#4a6570", flexShrink: 0, whiteSpace: "nowrap" }}>
+            <span className="flex-shrink-0 whitespace-nowrap text-[11px] text-foreground-subtle">
               {fileCatsDone}/5 done
             </span>
           </div>
 
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div className="min-h-0 flex-1">
             {selectedPath ? (
               <AceEditor
                 key={selectedPath}
@@ -473,7 +401,7 @@ export default function GroupRaidArena({ codebaseName, files, filesCode, fileTre
                 style={{ lineHeight: "1.7" }}
               />
             ) : (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#4a6570", fontSize: "14px" }}>
+              <div className="flex h-full items-center justify-center text-sm text-foreground-subtle">
                 Select a file from the explorer
               </div>
             )}
@@ -481,32 +409,19 @@ export default function GroupRaidArena({ codebaseName, files, filesCode, fileTre
         </div>
 
         {/* Right: Vulnerability panel */}
-        <div style={{
-          width: "370px", flexShrink: 0,
-          background: "#0a1419",
-          borderLeft: "1px solid rgba(201,214,218,0.07)",
-          display: "flex", flexDirection: "column",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            padding: "10px 16px",
-            borderBottom: "1px solid rgba(201,214,218,0.07)",
-            flexShrink: 0,
-          }}>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#e8f0f3", letterSpacing: "-0.01em" }}>
+        <div className="flex w-[370px] flex-shrink-0 flex-col overflow-hidden border-l border-border bg-background">
+          <div className="flex-shrink-0 border-b border-border px-4 py-2.5">
+            <div className="text-xs font-bold tracking-tight text-foreground">
               Vulnerability Hunter
             </div>
-            <div style={{
-              fontSize: "11px", color: "#4a6570", marginTop: "1px",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
+            <div className="mt-px overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-foreground-subtle">
               {selectedPath ? selectedPath.split("/").pop() : "Select a file to begin"}
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div className="flex-1 overflow-y-auto">
             {!selectedFile ? (
-              <div style={{ padding: "40px 20px", textAlign: "center", color: "#4a6570", fontSize: "13px" }}>
+              <div className="px-5 py-10 text-center text-[13px] text-foreground-subtle">
                 Select a file from the explorer to see its vulnerabilities.
               </div>
             ) : (
@@ -530,24 +445,15 @@ export default function GroupRaidArena({ codebaseName, files, filesCode, fileTre
           </div>
 
           {lastCheck?.error ? (
-            <div style={{
-              padding: "10px 16px", flexShrink: 0,
-              background: "rgba(245,90,90,0.07)",
-              borderTop: "1px solid rgba(245,90,90,0.18)",
-              fontSize: "11.5px", color: "#ff8080",
-            }}>
+            <div className="flex-shrink-0 border-t border-signal-security/20 bg-signal-security/[0.07] px-4 py-2.5 text-[11.5px] text-[#ff8080]">
               ✗ {lastCheck.error}
             </div>
           ) : (
-            <div style={{
-              padding: "11px 16px", flexShrink: 0,
-              borderTop: "1px solid rgba(201,214,218,0.07)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <span style={{ fontSize: "11px", color: "#4a6570" }}>
+            <div className="flex flex-shrink-0 items-center justify-between border-t border-border px-4 py-2.5">
+              <span className="text-[11px] text-foreground-subtle">
                 {selectedPath?.split("/").pop() ?? "File"} score
               </span>
-              <span style={{ fontSize: "14px", fontWeight: 800, color: "#3ddc84" }}>
+              <span className="text-sm font-extrabold" style={{ color: RESULT_COLORS.win }}>
                 {fileScore} pts
               </span>
             </div>

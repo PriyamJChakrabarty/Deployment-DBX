@@ -35,11 +35,7 @@ export default async function GroupRaidPage({ searchParams }) {
   const { teamGroupId = null, partnerName = null } = await searchParams;
 
   return (
-    <div style={{
-      display: "flex", flexDirection: "column", height: "100vh",
-      overflow: "hidden", background: "#0d1a1f",
-      fontFamily: "'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif",
-    }}>
+    <div className="flex h-screen flex-col overflow-hidden bg-background font-sans">
       <HeartbeatClient />
       <SiteNav active="/group-raid-page" />
       <GroupRaidLobbyClient
