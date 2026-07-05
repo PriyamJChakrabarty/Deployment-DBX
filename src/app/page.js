@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getRequestAuth } from "@/lib/clerk-guard";
+import LandingBattleDemo from "@/app/landing-battle-demo";
 
 export const dynamic = "force-dynamic";
 
@@ -162,6 +163,8 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      <LandingBattleDemo />
 
       {/* ── Game modes ───────────────────────────────────────── */}
       <section style={{

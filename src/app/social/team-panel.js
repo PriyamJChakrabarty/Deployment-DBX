@@ -19,10 +19,30 @@ const C = {
 const ROLE_RANK  = { captain: 0, vice_captain: 1, member: 2 };
 const ROLE_LABEL = { captain: "Captain", vice_captain: "Vice Captain", member: "Member" };
 const ROLE_COLOR = { captain: C.gold, vice_captain: C.cyan, member: C.sub };
+const ROLE_ICON  = { captain: "👑", vice_captain: "🥈", member: "🎮" };
 
 const EMOJIS = ["🛡️","⚔️","🔥","💀","🏆","👑","🐉","⚡","🌪️","🎯","🦅","🐺","🦁","🔱","🌟","💎","🚀","🧠","🤖","🎮"];
 
 const SIZE_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 10];
+
+const KEYFRAMES = `
+@keyframes raid-glow {
+  0%, 100% { box-shadow: 0 0 18px rgba(245,185,66,0.35), 0 0 0px rgba(245,185,66,0); }
+  50%      { box-shadow: 0 0 40px rgba(245,185,66,0.65), 0 0 70px rgba(245,185,66,0.25); }
+}
+@keyframes raid-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes badge-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+`;
 
 function canKick(myRole, targetRole)   { return ROLE_RANK[myRole] < ROLE_RANK[targetRole]; }
 function canPromote(myRole, targetRole) { return ROLE_RANK[myRole] < ROLE_RANK[targetRole]; }
@@ -77,14 +97,23 @@ function MemberRow({ member, myClerkId, myRole, teamId, onRefresh }) {
       background: C.card, border: `1px solid ${C.border}`,
       marginBottom: 6,
     }}>
-      <div style={{
-        width: 38, height: 38, borderRadius: "50%",
-        background: `linear-gradient(135deg, ${ROLE_COLOR[member.role]}22, ${ROLE_COLOR[member.role]}08)`,
-        border: `1.5px solid ${ROLE_COLOR[member.role]}44`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 16, fontWeight: 700, color: ROLE_COLOR[member.role], flexShrink: 0,
-      }}>
-        {(member.displayName || "?")[0].toUpperCase()}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          background: `linear-gradient(135deg, ${ROLE_COLOR[member.role]}2c, ${ROLE_COLOR[member.role]}08)`,
+          border: `1.5px solid ${ROLE_COLOR[member.role]}55`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 16, fontWeight: 700, color: ROLE_COLOR[member.role],
+        }}>
+          {(member.displayName || "?")[0].toUpperCase()}
+        </div>
+        <div style={{
+          position: "absolute", bottom: -3, right: -4, fontSize: 13,
+          background: C.bg, borderRadius: "50%", lineHeight: 1, padding: 1.5,
+          border: `1px solid ${C.border}`,
+        }}>
+          {ROLE_ICON[member.role]}
+        </div>
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -103,7 +132,7 @@ function MemberRow({ member, myClerkId, myRole, teamId, onRefresh }) {
           </span>
         </div>
         <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-          Joined {timeAgo(member.joinedAt)}
+          🕐 Joined {timeAgo(member.joinedAt)}
         </div>
       </div>
 
@@ -434,7 +463,7 @@ function CreateTeamForm({ onCreated }) {
       display: "flex", flexDirection: "column", gap: 20, overflowY: "auto",
     }}>
       <div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4 }}>Create a Team</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4 }}>🛡️ Create a Team</div>
         <div style={{ fontSize: 12, color: C.muted }}>Form your squad and invite players to raid together.</div>
       </div>
 
@@ -536,7 +565,7 @@ function OpenTeamsList({ onJoined }) {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.sub, marginBottom: 20, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-        Open Teams
+        🌐 Open Teams
       </div>
 
       {loading && <p style={{ color: C.muted, fontSize: 13 }}>Loading…</p>}
@@ -587,36 +616,98 @@ function OpenTeamsList({ onJoined }) {
 
 // ── In-team view ───────────────────────────────────────────────
 
+function StatItem({ icon, value, label, color }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 14 }}>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1.15 }}>{value}</div>
+        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" }}>
+          {label}
+        </div>
+      </div>
+      <div style={{ fontSize: 28, flexShrink: 0 }}>{icon}</div>
+    </div>
+  );
+}
+
 function InTeamView({ team, myClerkId, onRefresh, onLeave }) {
   const [tab, setTab]         = useState("members");
   const [raiding, setRaiding] = useState(false);
 
   const canChallenge = team.myRole === "captain" || team.myRole === "vice_captain";
+  const isCaptain    = team.myRole === "captain";
 
   const TABS = [
-    { id: "members",   label: "Members"    },
-    { id: "chat",      label: "Chat"       },
-    { id: "raids",     label: "Past Raids" },
-    ...(canChallenge ? [{ id: "challenge", label: "⚔ Challenge" }] : []),
+    { id: "members",   label: "Members",    icon: "👥" },
+    { id: "chat",      label: "Chat",       icon: "💬" },
+    { id: "raids",     label: "Past Raids", icon: "📜" },
+    ...(canChallenge ? [{ id: "challenge", label: "Challenge", icon: "⚔️" }] : []),
   ];
 
   const wins   = team.wins ?? 0;
   const losses = team.losses ?? 0;
+  const played = wins + losses;
+  const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
+
+  async function startRaid() {
+    setRaiding(true);
+    try {
+      const data = await apiFetch(`/api/teams/${team.id}/raid`, { method: "POST" });
+      window.location.href = `/team-raid-lobby/${data.teamGroupId}`;
+    } catch (e) { alert(e.message); setRaiding(false); }
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", overflow: "hidden" }}>
+      <style>{KEYFRAMES}</style>
 
       {/* Team header */}
       <div style={{
-        padding: "20px 28px 16px",
+        position: "relative",
+        padding: "22px 28px 0",
         borderBottom: `1px solid ${C.border}`,
-        background: C.panel, flexShrink: 0,
+        background: `linear-gradient(180deg, rgba(245,185,66,0.05), ${C.panel} 70%)`,
+        flexShrink: 0,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-          <div style={{ fontSize: 48, lineHeight: 1 }}>{team.emoji}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: C.text, letterSpacing: "-0.02em" }}>
+        <button
+          onClick={onLeave}
+          style={{
+            position: "absolute", top: 20, left: 28,
+            display: "flex", alignItems: "center", gap: 7,
+            background: "rgba(239,68,68,0.08)", color: C.red,
+            border: `1px solid rgba(239,68,68,0.35)`, borderRadius: 8,
+            padding: "8px 16px 8px 14px", fontSize: 12, fontWeight: 700,
+            letterSpacing: "0.02em", cursor: "pointer",
+            transition: "background 0.15s, border-color 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(239,68,68,0.18)";
+            e.currentTarget.style.borderColor = "rgba(239,68,68,0.6)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(239,68,68,0.08)";
+            e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)";
+          }}
+        >
+          <span style={{ fontSize: 14 }}>🚪</span> Leave Team
+        </button>
+
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center", gap: 32, marginBottom: 18, padding: "0 8px",
+        }}>
+          <div />
+
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            <div style={{
+              fontSize: 64, lineHeight: 1, marginBottom: 10,
+              filter: `drop-shadow(0 0 18px ${ROLE_COLOR[team.myRole]}55)`,
+              animation: "badge-float 3.4s ease-in-out infinite",
+            }}>
+              {team.emoji}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 30, fontWeight: 900, color: C.text, letterSpacing: "-0.02em" }}>
                 {team.name}
               </span>
               <span style={{
@@ -626,70 +717,79 @@ function InTeamView({ team, myClerkId, onRefresh, onLeave }) {
                 border: `1px solid ${ROLE_COLOR[team.myRole]}30`,
                 borderRadius: 99, padding: "2px 10px",
               }}>
-                {ROLE_LABEL[team.myRole]}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: 20 }}>
-              <span style={{ fontSize: 12, color: C.green, fontWeight: 700 }}>{wins}W</span>
-              <span style={{ fontSize: 12, color: C.red,   fontWeight: 700 }}>{losses}L</span>
-              <span style={{ fontSize: 12, color: C.muted }}>
-                {team.members.length} / {team.size} members
+                {ROLE_ICON[team.myRole]} {ROLE_LABEL[team.myRole]}
               </span>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            {team.myRole === "captain" && (
-              <button
-                onClick={async () => {
-                  setRaiding(true);
-                  try {
-                    const data = await apiFetch(`/api/teams/${team.id}/raid`, { method: "POST" });
-                    window.location.href = `/team-raid-lobby/${data.teamGroupId}`;
-                  } catch (e) { alert(e.message); setRaiding(false); }
-                }}
-                disabled={raiding}
-                style={{
-                  background: raiding ? "transparent" : C.gold,
-                  color: raiding ? C.gold : "#0d1a1f",
-                  border: `1px solid ${C.gold}`,
-                  borderRadius: 8, padding: "7px 18px",
-                  fontSize: 12, fontWeight: 800,
-                  cursor: raiding ? "default" : "pointer",
-                  opacity: raiding ? 0.6 : 1,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {raiding ? "Starting…" : "⚔ Raid"}
-              </button>
-            )}
-            <button
-              onClick={onLeave}
-              style={{
-                background: "transparent", color: C.muted,
-                border: `1px solid ${C.border}`, borderRadius: 8,
-                padding: "7px 16px", fontSize: 12, fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Leave
-            </button>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, justifySelf: "end" }}>
+            <StatItem icon="🏆" value={wins}     label="Wins"    color={C.green} />
+            <StatItem icon="💀" value={losses}   label="Losses"  color={C.red} />
+            <StatItem icon="📊" value={`${winRate}%`} label="Win Rate" color={C.cyan} />
+            <StatItem icon="👥" value={`${team.members.length}/${team.size}`} label="Roster" color={C.gold} />
           </div>
         </div>
 
+        {/* Raid CTA */}
+        {isCaptain && (
+          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 20 }}>
+            <button
+              onClick={startRaid}
+              disabled={raiding}
+              style={{
+                position: "relative", overflow: "hidden",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                padding: "16px 56px", borderRadius: 16, border: "none",
+                cursor: raiding ? "default" : "pointer",
+                background: raiding
+                  ? "rgba(245,185,66,0.25)"
+                  : `linear-gradient(100deg, #e6a530 0%, #f5b942 25%, #ffe08a 50%, #f5b942 75%, #e6a530 100%)`,
+                backgroundSize: "250% 100%",
+                animation: raiding ? "none" : "raid-glow 2.2s ease-in-out infinite, raid-shimmer 3.5s linear infinite",
+                opacity: raiding ? 0.7 : 1,
+                transform: "scale(1)",
+                transition: "transform 0.15s ease",
+              }}
+              onMouseEnter={(e) => { if (!raiding) e.currentTarget.style.transform = "scale(1.045)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+            >
+              <span style={{ fontSize: 22, fontWeight: 900, color: "#241505", letterSpacing: "0.03em" }}>
+                {raiding ? "⏳ Launching Raid…" : "⚔️ START RAID"}
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "#4a3410", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                Lead your squad into battle
+              </span>
+            </button>
+          </div>
+        )}
+        {!isCaptain && (
+          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 18 }}>
+            <div style={{
+              fontSize: 11.5, color: C.muted, fontWeight: 600,
+              background: "rgba(201,214,218,0.04)", border: `1px solid ${C.border}`,
+              borderRadius: 99, padding: "7px 18px",
+            }}>
+              ⏳ Only the captain {ROLE_ICON.captain} can launch a raid
+            </div>
+          </div>
+        )}
+
         {/* Tab bar */}
         <div style={{ display: "flex", gap: 4 }}>
-          {TABS.map(({ id, label }) => (
+          {TABS.map(({ id, label, icon }) => (
             <button
               key={id} onClick={() => setTab(id)}
               style={{
-                padding: "6px 16px", borderRadius: 8,
-                fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none",
+                padding: "8px 18px", borderRadius: "10px 10px 0 0",
+                fontSize: 12.5, fontWeight: 700, cursor: "pointer", border: "none",
+                display: "flex", alignItems: "center", gap: 6,
                 background: tab === id ? "rgba(61,220,132,0.1)" : "transparent",
                 color: tab === id ? C.green : C.muted,
                 borderBottom: tab === id ? `2px solid ${C.green}` : "2px solid transparent",
+                transition: "color 0.15s, background 0.15s",
               }}
             >
-              {label}
+              <span>{icon}</span> {label}
             </button>
           ))}
         </div>
